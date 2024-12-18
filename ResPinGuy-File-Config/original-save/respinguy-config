@@ -1,0 +1,28 @@
+#!/bin/bash
+#_____________________________________________________________________________________________
+# Modifiable :
+#
+# Nom de l'image :
+RPGBUILDNAME="Respinguy-Custom"
+# Repertoire ISO final
+RPGHOME=/home/ResPinGuy
+#
+#_____________________________________________________________________________________________
+#
+# Modifiable en fonction de la Distribution !
+#
+# Emplacement du noyaux dans le système :
+VMLINUZ=/boot/vmlinuz-$(uname -r)
+# Emplacement de initramfs dans le système :
+INITRD=/boot/initrd-$(uname -r)
+#
+#_____________________________________________________________________________________________
+# Non-Modifiable (expert) :
+#
+# Version du kernel (noyaux) Linux :
+KERNEL=$(uname -r)
+# Architecture du CPU
+ARCH=$(uname -m)
+# Dossier de la racine (/) qui seront build (si vous ajoutez, ne pas mettre de /)
+ROOTDIR="bin boot etc home lib lib64 opt root sbin srv usr var"
+#_____________________________________________________________________________________________

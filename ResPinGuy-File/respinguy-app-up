@@ -1,0 +1,50 @@
+#!/bin/bash
+#######################################################################
+# Root
+allow_only_root()
+{
+  if [ "0$UID" -ne 0 ]; then
+     echo "Merci d'être en root pour lancer L'installation"; exit 1
+  fi
+}
+allow_only_root
+clear
+#######################################################################
+# Vérification les dependences
+bash /usr/share/ResPinGuy-File/respinguy-app-dep
+#######################################################################
+cd /tmp/
+git clone https://github.com/France-OPG/ResPinGuy.git
+cd ResPinGuy
+#
+# Copie, ...
+read -p "Continuer ..."
+cp ./ResPinGuy-CMD/respinguy /usr/bin/
+chmod +x /usr/bin/respinguy
+echo "... [1/4]"
+cp ./ResPinGuy-CMD/respinguy-app-rm /usr/bin/
+chmod +x /usr/bin/respinguy-app-rm
+echo "... [2/4]"
+cp ./ResPinGuy-CMD/respinguy-app-up /usr/bin/
+chmod +x /usr/bin/respinguy-app-up
+echo "... [3/4]"
+cp ./ResPinGuy-CMD/respinguy-build /usr/bin/
+chmod +x /usr/bin/respinguy-build
+echo "... [4/4]"
+echo "Les commandes sont Installer."
+#
+cp -r ResPinGuy-File/ /usr/share/
+echo "... [1/2]"
+rm -r /tmp/file-respinguy/
+echo "... [2/2]"
+echo "Les Fichiers sont Installer."
+#
+cd /tmp/
+rm ResPinGuy
+cd ~
+clear
+#######################################################################
+echo "---"
+echo "MAJ - Terminer."
+echo "---"
+#######################################################################

@@ -1,0 +1,179 @@
+#!/bin/bash
+#######################################################################
+# Root
+allow_only_root()
+{
+  if [ "0$UID" -ne 0 ]; then
+     echo "Merci d'être en root pour lancer L'installation"; exit 1
+  fi
+}
+allow_only_root
+#######################################################################
+#_________________________________________________
+# Vérifier l'outils git
+if [ ! $(type -p git) ]; then
+    echo "git n'est pas installé,"
+    echo "nous ne sommes pas capables de forcer son installation..."
+    echo "Nous travaillons pour que cela sois possible prochainement !"
+fi
+#_________________________________________________
+# Vérifier l'outils wget
+if [ ! $(type -p wget) ]; then
+    echo "wget n'est pas installé,"
+    echo "nous ne sommes pas capables de forcer son installation..."
+    echo "Nous travaillons pour que cela sois possible prochainement !"
+fi
+#_________________________________________________
+# Vérifier l'outils sudo
+if [ ! $(type -p sudo) ]; then
+    echo "sudo n'est pas installé,"
+    echo "nous ne sommes pas capables de forcer son installation..."
+    echo "Nous travaillons pour que cela sois possible prochainement !"
+fi
+#_________________________________________________
+# Vérifier l'outils bash
+if [ ! $(type -p bash) ]; then
+    echo "bash n'est pas installé,"
+    echo "nous ne sommes pas capables de forcer son installation..."
+    echo "Nous travaillons pour que cela sois possible prochainement !"
+fi
+#_________________________________________________
+# Vérifier l'outils sh
+if [ ! $(type -p sh) ]; then
+    echo "sh n'est pas installé,"
+    echo "nous ne sommes pas capables de forcer son installation..."
+    echo "Nous travaillons pour que cela sois possible prochainement !"
+fi
+#_________________________________________________
+# Vérifier l'outils nano
+if [ ! $(type -p nano) ]; then
+    echo "nano n'est pas installé,"
+    echo "nous ne sommes pas capables de forcer son installation..."
+    echo "Nous travaillons pour que cela sois possible prochainement !"
+fi
+#_________________________________________________
+# Vérifier l'outils de uname
+if [ ! $(type -p uname) ]; then
+    echo "uname n'est pas installé,"
+    echo "nous ne sommes pas capables de forcer son installation..."
+    echo "Nous travaillons pour que cela sois possible prochainement !"
+fi
+#_________________________________________________
+# Vérifier les mksquashfs avec compression xz
+if [ "$(mksquashfs 2>&1 | grep "Xdict-size")" = "" ]; then
+    echo "mksquashfs n'est pas installé,"
+    echo "nous ne sommes pas capables de forcer son installation..."
+    echo "Nous travaillons pour que cela sois possible prochainement !"
+fi
+#_________________________________________________
+# Vérifier l'outils de création de l'image ISO
+#KERNEL=$(uname -r)
+#if [ ! -d "/lib/modules/$KERNEL/kernel/fs/squashfs/" ];then
+#	clear
+#   echo "Impossible de trouver les modules : squashfs"
+#   echo "Vous pouvez envisager d'installer un autre noyaux ou de le recompiler"
+#   echo "Si vous etes sur Ubuntu nous vous recommandons le noyaux Liquorix (https://liquorix.net)"
+#	exit 1
+#fi
+#_________________________________________________
+# Vérifier l'outils dracut
+if [ ! $(type -p dracut) ]; then
+    echo "Vérification des dépendances de dracut"
+    if [ $(type -p gcc) ]; then
+        echo "gcc n'est pas installé,"
+        echo "nous ne sommes pas capables de forcer son installation..."
+        echo "Nous travaillons pour que cela sois possible prochainement !"
+        exit 1
+    fi
+        if [ ! $(type -p make) ]; then
+        echo "make n'est pas installé,"
+        echo "nous ne sommes pas capables de forcer son installation..."
+        echo "Nous travaillons pour que cela sois possible prochainement !"
+        exit 1
+    fi
+        if [ "$(grep "zlib" *.so)" = "" ]; then
+        echo "zlib n'est pas installé,"
+        echo "nous ne sommes pas capables de forcer son installation..."
+        echo "Nous travaillons pour que cela sois possible prochainement !"
+        exit 1
+    fi
+        if [ ! $(type -p libuuid) ]; then
+        echo "libuuid n'est pas installé,"
+        echo "nous ne sommes pas capables de forcer son installation..."
+        echo "Nous travaillons pour que cela sois possible prochainement !"
+        exit 1
+    fi
+        if [ ! $(type -p libblkid) ]; then
+        echo "libblkid n'est pas installé,"
+        echo "nous ne sommes pas capables de forcer son installation..."
+        echo "Nous travaillons pour que cela sois possible prochainement !"
+        exit 1
+    fi
+        if [ ! $(type -p libkmod) ]; then
+        echo "libkmod n'est pas installé,"
+        echo "nous ne sommes pas capables de forcer son installation..."
+        echo "Nous travaillons pour que cela sois possible prochainement !"
+        exit 1
+    fi
+        if [ ! $(type -p asciidoc) ]; then
+        echo "asciidoc n'est pas installé,"
+        echo "nous ne sommes pas capables de forcer son installation..."
+        echo "Nous travaillons pour que cela sois possible prochainement !"
+        exit 1
+    fi
+        if [ ! $(type -p xmlto) ]; then
+        echo "xmlto n'est pas installé,"
+        echo "nous ne sommes pas capables de forcer son installation..."
+        echo "Nous travaillons pour que cela sois possible prochainement !"
+        exit 1
+    fi
+    echo "Téléchargement de dracut"
+    git clone https://github.com/dracutdevs/dracut.git
+    echo "Extraction de dracut"
+    cd dracut
+    echo "Compilation de dracut"
+    ./configure && make
+    echo "Installation de dracut"
+    sudo make install
+    echo "Nettoyage..."
+    cd ..
+    rm -rf dracut
+fi
+#_________________________________________________
+# Vérifier l'outils de création de l'image ISO
+if [ ! $(type -p xorriso) ]; then
+    echo "xorriso n'est pas installé,"
+    echo "nous ne sommes pas capables de forcer son installation..."
+    echo "Nous travaillons pour que cela sois possible prochainement !"
+fi
+#######################################################################
+clear
+echo "Certaines dépendances ont pué être résolues."
+echo "Pour celle non résolue nous vous invitons à les compiler."
+exit
+#_________________________________________________
+# Vérifier l'outils de ...
+#if [ ! $(type -p ...) ]; then
+#    echo "Vérification des dépendances de dracut"
+#    echo "Téléchargement de ..."
+#    echo "Extraction de ..."
+#    echo "Compilation de ..."
+#    echo "Installation de ..."
+#    echo "Nettoyage..."
+#fi
+#
+#
+# Vérifier l'outils de ...
+#if [ ! $(type -p ...) ]; then
+#    echo "... n'est pas installé,"
+#    echo "nous ne sommes pas capables de forcer son installation..."
+#    echo "Nous travaillons pour que cela sois possible prochainement !"
+#fi
+#
+#
+#    if [ ! $(type -p ...) ]; then
+#        echo "... n'est pas installé,"
+#        echo "nous ne sommes pas capables de forcer son installation..."
+#        echo "Nous travaillons pour que cela sois possible prochainement !"
+#        exit 1
+#    fi

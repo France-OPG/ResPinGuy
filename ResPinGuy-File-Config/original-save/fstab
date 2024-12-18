@@ -1,0 +1,2 @@
+/dev/sr0 /media/cdrom udf,iso9660 noauto,user,rw 0 0
+/media/cdrom/LiveOS/squashfs.img / squashfs defaults 0 0

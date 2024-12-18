@@ -1,0 +1,41 @@
+#!/bin/bash
+#######################################################################
+# Root
+allow_only_root()
+{
+  if [ "0$UID" -ne 0 ]; then
+     echo "Merci d'être en root pour lancer L'installation"; exit 1
+  fi
+}
+allow_only_root
+#######################################################################
+clear
+read -p "Appuyez sur une touche pour lancer la Suppression ..."
+#######################################################################
+# Suppression, ...
+rm /usr/bin/respinguy
+echo "... [1/6]"
+rm /usr/bin/respinguy-app-rm
+echo "... [2/6]"
+rm /usr/bin/respinguy-app-up
+echo "... [3/6]"
+rm /usr/bin/respinguy-app-dep
+echo "... [4/6]"
+rm /usr/bin/respinguy-build
+echo "... [5/6]"
+rm /usr/bin/respinguy-config
+echo "... [6/6]"
+echo "Les commandes sont Supprimer."
+#
+rm -rf /usr/share/ResPinGuy-File/
+echo "... [1/3]"
+rm -rf /usr/share/ResPinGuy-File-Config/
+echo "... [2/3]"
+rm -rf /respinguy-build-dir/
+echo "... [3/3]"
+echo "Les Fichiers sont Installer."
+#######################################################################
+echo "ResPinGuy n'est plus sur votre machine."
+read -p "Terminer."
+clear
+#######################################################################

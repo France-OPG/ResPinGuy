@@ -1,0 +1,12 @@
+#!/bin/bash
+#_____________________________________________________________________________________________
+# Seul root peut continuer, car seul root peut lire tous les fichiers de votre système !
+allow_only_root()
+{
+  if [ "0$UID" -ne 0 ]; then
+     echo "Merci d'être en root pour lancer : $(basename $0)"; exit 1
+  fi
+}
+allow_only_root
+#_____________________________________________________________________________________________
+bash /usr/share/ResPinGuy-File/respinguy-app-dep
