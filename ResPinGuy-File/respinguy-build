@@ -36,10 +36,15 @@ clear
 echo "_ _ _"
 echo "Résumer avant création"
 echo "---"
-echo "Nom : "$RPGBUILDNAME" - Emplacement Kernel : "$VMLINUZ" - Emplacement initramfs : "$INITRD
-echo "Kernel Version : "$KERNEL" - Architecture : "$ARCH" Extension du squashfs : "$SQEX
-echo "Dossier copier a partir de / : "$ROOTDIR
-echo "Dossier de l'ISO final : "$RPGHOME" - Tout sera créer dans : /respinguy-build-dir/"
+echo "Nom : "$RPGBUILDNAME""
+echo "Emplacement Kernel : "$VMLINUZ""
+echo "Emplacement initramfs : "$INITRD""
+echo "Kernel Version : "$KERNEL""
+echo "Architecture : "$ARCH""
+echo "Extension du squashfs : "$SQEX""
+echo "Dossier copier a partir de / : "$ROOTDIR""
+echo "Dossier de l'ISO final : "$RPGHOME""
+echo "Tout sera créer dans : /respinguy-build-dir/"
 echo "_ _ _"
 echo "Nettoyage de /respinguy-build-dir/ ..."
 rm -rf /respinguy-build-dir/
