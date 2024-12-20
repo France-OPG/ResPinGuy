@@ -25,4 +25,24 @@ KERNEL=$(uname -r)
 ARCH=$(uname -m)
 # Dossier de la racine (/) qui seront build (si vous ajoutez, ne pas mettre de /)
 ROOTDIR="bin boot etc home lib lib64 opt root sbin srv usr var"
+# Nettoyer les fichiers cache 
+CLEANCACHE= \
+ -noappend                 \
+ -wildcards                \
+ -e "proc/*"               \
+ -e "proc/.*"              \
+ -e "run/*"                \
+ -e "run/.*"               \
+ -e "tmp/*"                \
+ -e "tmp/.*"               \
+ -e "var/crash/*"          \
+ -e "var/crash/.*"         \
+ -e "swapfile"             \
+ -e "root/.bash_history"   \
+ -e "root/.cache"          \
+ -e "root/.wget-hsts"      \
+ -e "home/*/.bash_history" \
+ -e "home/*/.cache"        \
+ -e "home/*/.wget-hsts"    \
+ -e "$RPGHOME"
 #_____________________________________________________________________________________________

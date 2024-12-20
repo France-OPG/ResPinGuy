@@ -87,25 +87,7 @@ for i in $ROOTDIR; do
       SQSFDIR="$SQSFDIR /$i"
    fi
 done
-mksquashfs $SQSFDIR /respinguy-build-dir/LiveOS/squashfs.img -comp xz -b 1024K -always-use-fragments -keep-as-directory \
- -noappend                 \
- -wildcards                \
- -e "proc/*"               \
- -e "proc/.*"              \
- -e "run/*"                \
- -e "run/.*"               \
- -e "tmp/*"                \
- -e "tmp/.*"               \
- -e "var/crash/*"          \
- -e "var/crash/.*"         \
- -e "swapfile"             \
- -e "root/.bash_history"   \
- -e "root/.cache"          \
- -e "root/.wget-hsts"      \
- -e "home/*/.bash_history" \
- -e "home/*/.cache"        \
- -e "home/*/.wget-hsts"    \
- -e "$RPGHOME"
+mksquashfs $SQSFDIR /respinguy-build-dir/LiveOS/squashfs.img -comp xz -b 1024K -always-use-fragments -keep-as-directory $CLEANCACHE
 clear
 echo "Création du squashfs 1/1 ..."
 read -p "Appuyez sur une touche pour continuer ..."
