@@ -46,6 +46,27 @@ echo "Dossier copier a partir de / : "$ROOTDIR""
 echo "Dossier de l'ISO final : "$RPGHOME""
 echo "Tout sera créer dans : /respinguy-build-dir/"
 echo "_ _ _"
+if [[ -n "$RPGCONFIGUSER" && -n "$RPGCONFIGUSERPERS" ]]; then
+  clear
+  echo "Erreur : Les variables RPGCONFIGUSER et RPGCONFIGUSERPERS ne peuvent pas être définies en même temps."
+  exit 1
+fi
+echo "OK : RPGCONFIGUSER et RPGCONFIGUSERPERS ne sont pas en conflit"
+if [ -n "$HOME" ] && [ -n "$RPGCONFIGUSER" ]; then
+    echo "Le répertoire $HOME sera utilisé comme config pour tous les nouveaux utilisateurs"
+    echo "Uniquement dans l'ISO"
+else
+    echo "Le répertoire $HOME ne sera pas utilisé comme config pour tous les nouveaux utilisateurs"
+    echo "Même dans l'ISO"
+fi
+if [ -n "$HOME" ] && [ -n "$RPGCONFIGUSERPERS" ]; then
+    echo "Le répertoire $HOME sera utilisé comme config pour tous les nouveaux utilisateurs"
+    echo "Dans l'ISO et sur le système actuel !"
+else
+    echo "Le répertoire $HOME ne sera pas utilisé comme config pour tous les nouveaux utilisateurs"
+    echo "Même dans l'ISO"
+fi
+echo "_ _ _"
 echo "Nettoyage de /respinguy-build-dir/ ..."
 rm -rf /respinguy-build-dir/
 read -p "Appuyez sur une touche pour continuer ..."
@@ -78,6 +99,17 @@ echo "Terminé"
 read -p "Appuyez sur une touche pour continuer ..."
 clear
 #
+if [ $RPGCONFIGUSER ]; then
+    $RPGCONFIGUSER
+    RPGCONFIGUSERRM= sh ./usr/share/ResPinGuy-File/script/rcurm
+    echo "OK : RPGCONFIGUSER"
+elif [ $RPGCONFIGUSERPERS ]; then
+    $RPGCONFIGUSERPERS
+    echo "OK : RPGCONFIGUSERPERS"
+else
+    echo "Le répertoire $HOME ne sera aucunement utilisé comme config pour tous les nouveaux utilisateurs"
+fi
+#
 #_____________________________________________________________________________________________
 # Création de l'image squashfs :
 echo "Création du squashfs 0/1 ..."
@@ -92,6 +124,10 @@ clear
 echo "Création du squashfs 1/1 ..."
 read -p "Appuyez sur une touche pour continuer ..."
 echo "Création de l'initrd ..."
+if [ "$RPGCONFIGUSER" ]; then
+    # Action à exécuter si $RPGCONFIGUSER est vrai (non vide)
+    $RPGCONFIGUSERRM
+fi
 # ( PROBLEME A LA CREATION DE L'INITRD !!! )
 #
 dracut -N -a dmsquash-live --add-fstab /usr/share/ResPinGuy-File-Config/fstab /respinguy-build-dir/initrd --force
