@@ -1,7 +1,2 @@
-# base leonard :
-/dev/sr0 /media/cdrom udf,iso9660 noauto,user,rw 0 0
-/media/cdrom/LiveOS/squashfs.img / squashfs defaults 0 0
-#
-# base raphael :
-/dev/sr0 /media/cdrom udf,iso9660 noauto,user,rw 0 0
-/media/cdrom/LiveOS/squashfs.img /run/initramfs/squashfs squashfs defaults 0 0
+# Point de montage pour le squashfs
+/LiveOS/squashfs.img /mnt/live squashfs loop 0 0
