@@ -1,37 +1,29 @@
 #!/bin/bash
-#_____________________________________________________________________________________________
-# Modifiable :
-#
-# Nom de l'image :
+# ResPinGuy - Fichier de configuration
+# Emplacement : /usr/share/ResPinGuy-File-Config/respinguy-config
+
+# Nom de l'image ISO générée
 RPGBUILDNAME="Respinguy-Custom"
-# Repertoire ISO final
+
+# Dossier de destination de l'ISO final
 RPGHOME=/home/ResPinGuy
-#
-# Repertoire utilisateur
-#HOME=/home/?/
-# /home/... dans l'iso (sans persistance dans système installer)
-#RPGCONFIGUSER= sh ./usr/share/ResPinGuy-File/script/rcu
-# /home/... dans l'iso (avec persistance dans système installer)
-#RPGCONFIGUSERPERS= sh ./usr/share/ResPinGuy-File/script/rcup
-#
-#_____________________________________________________________________________________________
-#
-# Modifiable en fonction de la Distribution !
-#
-# Emplacement du noyaux dans le système :
+
+# Répertoire home à inclure (décommentez et adaptez)
+#HOME=/home/monuser/
+
+# Option 1 : home dans l'ISO uniquement (sans persistance)
+#RPGCONFIGUSER=1
+
+# Option 2 : home dans l'ISO + persistance après install
+#RPGCONFIGUSERPERS=1
+
+# Emplacement du kernel (adapter selon la distro)
+# Debian/Ubuntu : vmlinuz-$(uname -r)
+# Fedora        : vmlinuz-$(uname -r)
+# Arch          : vmlinuz-linux
 VMLINUZ=/boot/vmlinuz-$(uname -r)
-# Emplacement de initramfs dans le système :
-INITRD=/boot/initrd-$(uname -r)
-#
-#_____________________________________________________________________________________________
-# Non-Modifiable (expert) :
-#
-# Version du kernel (noyaux) Linux :
+
+# Variables automatiques (ne pas modifier)
 KERNEL=$(uname -r)
-# Architecture du CPU
 ARCH=$(uname -m)
-# Dossier de la racine (/) qui seront build (si vous ajoutez, ne pas mettre de /)
 ROOTDIR="bin boot etc home lib lib64 opt root sbin srv usr var"
-# Nettoyer les fichiers cache (ne pas activer ! Ne fonctionne pas !)
-#CLEANCACHE=$(-noappend -wildcards -e "proc/*" -e "proc/.*" -e "run/*" -e "run/.*" -e "tmp/*" -e "tmp/.*" -e "var/crash/*" -e "var/crash/.*" -e "swapfile" -e "root/.bash_history" -e "root/.cache" -e "root/.wget-hsts" -e "home/*/.bash_history" -e "home/*/.cache" -e "home/*/.wget-hsts" -e "$RPGHOME" )
-#_____________________________________________________________________________________________

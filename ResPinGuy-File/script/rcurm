@@ -1,15 +1,11 @@
 #!/bin/bash
-#_____________________________________________________________________________________________
-# Seul root peut continuer, car seul root peut lire tous les fichiers de votre système !
-#
-allow_only_root()
-{
-  if [ "0$UID" -ne 0 ]; then
-     echo "Merci d'être en root pour lancer : $(basename $0)"; exit 1
-  fi
+allow_only_root() {
+  if [ "0$UID" -ne 0 ]; then echo "Merci d'être en root pour lancer : $(basename $0)"; exit 1; fi
 }
 allow_only_root
-cd /usr/share/ResPinGuy-File-Config/
-. ./respinguy-config || exit 1
+if [ ! -d /etc/skel-save ]; then
+  echo "[ERREUR] Aucune sauvegarde dans /etc/skel-save. Restauration impossible."; exit 1
+fi
+rm -rf /etc/skel/
 mv /etc/skel-save/ /etc/skel/
-rm -rf /etc/skel-save/
+echo "[OK] /etc/skel/ restauré."

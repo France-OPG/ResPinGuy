@@ -1,50 +1,27 @@
 #!/bin/bash
-#######################################################################
-# Root
-allow_only_root()
-{
-  if [ "0$UID" -ne 0 ]; then
-     echo "Merci d'être en root pour lancer L'installation"; exit 1
-  fi
+allow_only_root() {
+  if [ "0$UID" -ne 0 ]; then echo "Merci d'être en root pour lancer : $(basename $0)"; exit 1; fi
 }
 allow_only_root
 clear
-#######################################################################
-# Vérification les dependences
 bash /usr/share/ResPinGuy-File/respinguy-app-dep
-#######################################################################
-cd /tmp/
+if [ $? -ne 0 ]; then echo "[ERREUR] Dépendances manquantes. Mise à jour annulée."; exit 1; fi
+cd /tmp/ || exit 1
 git clone https://github.com/France-OPG/ResPinGuy.git
-cd ResPinGuy
-#
-# Copie, ...
-read -p "Continuer ..."
-cp ./ResPinGuy-CMD/respinguy /usr/bin/
-chmod +x /usr/bin/respinguy
-echo "... [1/4]"
-cp ./ResPinGuy-CMD/respinguy-app-rm /usr/bin/
-chmod +x /usr/bin/respinguy-app-rm
-echo "... [2/4]"
-cp ./ResPinGuy-CMD/respinguy-app-up /usr/bin/
-chmod +x /usr/bin/respinguy-app-up
-echo "... [3/4]"
-cp ./ResPinGuy-CMD/respinguy-build /usr/bin/
-chmod +x /usr/bin/respinguy-build
-echo "... [4/4]"
-echo "Les commandes sont Installer."
-#
-cp -r ResPinGuy-File/ /usr/share/
-echo "... [1/2]"
-rm -r /tmp/file-respinguy/
-echo "... [2/2]"
-echo "Les Fichiers sont Installer."
-#
-cd /tmp/
-rm ResPinGuy
-cd ~
+if [ $? -ne 0 ]; then echo "[ERREUR] Échec du clonage GitHub."; exit 1; fi
+cd ResPinGuy || exit 1
+read -p "Appuyez sur Entrée pour continuer la mise à jour..."
+cp ./ResPinGuy-CMD/respinguy /usr/bin/         && chmod +x /usr/bin/respinguy         && echo "... [1/6]"
+cp ./ResPinGuy-CMD/respinguy-app-rm /usr/bin/  && chmod +x /usr/bin/respinguy-app-rm  && echo "... [2/6]"
+cp ./ResPinGuy-CMD/respinguy-app-up /usr/bin/  && chmod +x /usr/bin/respinguy-app-up  && echo "... [3/6]"
+cp ./ResPinGuy-CMD/respinguy-build /usr/bin/   && chmod +x /usr/bin/respinguy-build   && echo "... [4/6]"
+cp ./ResPinGuy-CMD/respinguy-config /usr/bin/  && chmod +x /usr/bin/respinguy-config  && echo "... [5/6]"
+cp ./ResPinGuy-CMD/respinguy-app-dep /usr/bin/ && chmod +x /usr/bin/respinguy-app-dep && echo "... [6/6]"
+echo "Les commandes sont mises à jour."
+cp -r ResPinGuy-File/ /usr/share/ && echo "... [1/1]"
+echo "Les fichiers sont mis à jour."
+cd /tmp/ && rm -rf ResPinGuy && cd ~
 clear
-#######################################################################
 echo "---"
-echo "MAJ - Terminer."
+echo "Mise à jour terminée."
 echo "---"
-#######################################################################
