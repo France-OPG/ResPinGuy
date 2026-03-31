@@ -1,7 +1,6 @@
 #!/bin/bash
 #_____________________________________________________________________________________________
 # ResPinGuy - Build
-# Seul root peut continuer
 allow_only_root() {
   if [ "0$UID" -ne 0 ]; then
      echo "Merci d'être en root pour lancer : $(basename $0)"; exit 1
@@ -9,27 +8,17 @@ allow_only_root() {
 }
 allow_only_root
 
-#_____________________________________________________________________________________________
-# Chargement de la configuration
 cd /usr/share/ResPinGuy-File-Config/ || exit 1
 . ./respinguy-config || exit 1
 
-#_____________________________________________________________________________________________
-# Vérification des dépendances
 bash /usr/share/ResPinGuy-File/respinguy-app-dep
-if [ $? -ne 0 ]; then
-    echo "[ERREUR] Dépendances manquantes. Build annulé."
-    exit 1
-fi
+if [ $? -ne 0 ]; then echo "[ERREUR] Dépendances manquantes. Build annulé."; exit 1; fi
 
-#_____________________________________________________________________________________________
-# Vérification des modules dracut requis
 if [ ! "$(dracut --list-modules 2>/dev/null | grep squash)" ]; then
     echo "[ERREUR] Module dracut manquant : squash"
     echo "         Debian/Ubuntu : apt install dracut-live"
     echo "         Fedora/RHEL   : dnf install dracut-live dracut-squash"
     echo "         Arch          : pacman -S dracut"
-    echo "         OpenSUSE      : zypper install dracut"
     exit 1
 fi
 if [ ! "$(dracut --list-modules 2>/dev/null | grep dmsquash-live)" ]; then
@@ -37,33 +26,22 @@ if [ ! "$(dracut --list-modules 2>/dev/null | grep dmsquash-live)" ]; then
     echo "         Debian/Ubuntu : apt install dracut-live"
     echo "         Fedora/RHEL   : dnf install dracut-live"
     echo "         Arch          : pacman -S dracut"
-    echo "         OpenSUSE      : zypper install dracut"
     exit 1
 fi
 
-#_____________________________________________________________________________________________
-# Vérification du kernel
 if [ ! -f "$VMLINUZ" ]; then
     echo "[ERREUR] Kernel introuvable : $VMLINUZ"
-    echo "         Vérifiez la variable VMLINUZ dans respinguy-config"
-    echo "         Kernels disponibles sur ce système :"
-    ls /boot/vmlinuz* 2>/dev/null || echo "         Aucun trouvé dans /boot/"
+    ls /boot/vmlinuz* /boot/kernel* 2>/dev/null
     exit 1
 fi
 
-#_____________________________________________________________________________________________
-# Validation des variables de config
 if [ -z "$RPGBUILDNAME" ] || [ -z "$RPGHOME" ] || [ -z "$KERNEL" ]; then
-    echo "[ERREUR] Variable RPGBUILDNAME, RPGHOME ou KERNEL non définie dans respinguy-config"
-    exit 1
+    echo "[ERREUR] Variable RPGBUILDNAME, RPGHOME ou KERNEL non définie."; exit 1
 fi
 if [ -n "$RPGCONFIGUSER" ] && [ -n "$RPGCONFIGUSERPERS" ]; then
-    echo "[ERREUR] RPGCONFIGUSER et RPGCONFIGUSERPERS ne peuvent pas être définis en même temps."
-    exit 1
+    echo "[ERREUR] RPGCONFIGUSER et RPGCONFIGUSERPERS ne peuvent pas être définis ensemble."; exit 1
 fi
 
-#_____________________________________________________________________________________________
-# Résumé
 clear
 echo "_ _ _"
 echo "Résumé avant création"
@@ -83,8 +61,6 @@ echo "_ _ _"
 rm -rf /respinguy-build-dir/
 read -p "Appuyez sur Entrée pour lancer le build..."
 
-#_____________________________________________________________________________________________
-# Préparation des dossiers de build
 cd / || exit 1
 mkdir -p /respinguy-build-dir/LiveOS
 mkdir -p /respinguy-build-dir/isolinux
@@ -93,25 +69,18 @@ echo "Copie des fichiers ISO..."
 cp -r /usr/share/ResPinGuy-File/fichier/iso/isolinux/. /respinguy-build-dir/isolinux/
 cp /usr/share/ResPinGuy-File-Config/bootimg.png /respinguy-build-dir/isolinux/
 cp /usr/share/ResPinGuy-File-Config/isolinux.cfg /respinguy-build-dir/isolinux/
-echo "Terminé"
 
-# Création du dossier de sortie ISO
 if [ -n "$RPGHOME" ] && [ "$RPGHOME" != "/" ]; then
-    rm -rf "$RPGHOME"
-    mkdir -p "$RPGHOME"
+    rm -rf "$RPGHOME" && mkdir -p "$RPGHOME"
 else
     echo "[ERREUR] RPGHOME invalide : '$RPGHOME'"; exit 1
 fi
 
-echo "Copie du kernel..."
-cp "$VMLINUZ" /respinguy-build-dir/vmlinuz || { echo "[ERREUR] Impossible de copier le kernel."; exit 1; }
-echo "Terminé"
-
+cp "$VMLINUZ" /respinguy-build-dir/vmlinuz || { echo "[ERREUR] Copie kernel impossible."; exit 1; }
+echo "Kernel copié."
 read -p "Appuyez sur Entrée pour continuer..."
 clear
 
-#_____________________________________________________________________________________________
-# Gestion de la config home utilisateur
 if [ -n "$RPGCONFIGUSER" ]; then
     bash /usr/share/ResPinGuy-File/script/rcu || exit 1
 elif [ -n "$RPGCONFIGUSERPERS" ]; then
@@ -119,21 +88,36 @@ elif [ -n "$RPGCONFIGUSERPERS" ]; then
 fi
 
 #_____________________________________________________________________________________________
-# Création du squashfs
+# CRÉATION DU FSTAB LIVE DANS UN DOSSIER TEMPORAIRE
+# Le système source n'est JAMAIS modifié.
+# On crée un fstab live dans /tmp/rpg-fstab-overlay/etc/
+# puis on l'ajoute au squashfs en second passage avec -e "etc/fstab"
+# pour exclure l'original et -p pour injecter le nôtre.
+echo "Préparation du fstab live..."
+RPG_FSTAB_DIR=$(mktemp -d /tmp/rpg-fstab.XXXXXX)
+mkdir -p "$RPG_FSTAB_DIR/etc"
+cat > "$RPG_FSTAB_DIR/etc/fstab" << 'FSTABEOF'
+# /etc/fstab - ResPinGuy Live
+# Généré automatiquement par ResPinGuy pour le démarrage en mode live.
+# Les UUID du système source ont été retirés volontairement.
+tmpfs   /tmp     tmpfs   defaults,noatime  0 0
+tmpfs   /run     tmpfs   defaults,noatime  0 0
+FSTABEOF
+echo "[OK] fstab live préparé dans $RPG_FSTAB_DIR"
+
+#_____________________________________________________________________________________________
 echo "Création du squashfs..."
 SQSFDIR=""
 for i in $ROOTDIR; do
     [ -d "/$i" ] && SQSFDIR="$SQSFDIR /$i"
 done
 if [ -z "$SQSFDIR" ]; then
-    echo "[ERREUR] Aucun dossier valide trouvé dans ROOTDIR."
+    echo "[ERREUR] Aucun dossier valide dans ROOTDIR."
+    rm -rf "$RPG_FSTAB_DIR"
     exit 1
 fi
 
-# --- CORRECTION BOOT ---
-# On exclut /etc/fstab du squashfs pour éviter que le système live
-# essaie de monter les UUID du disque source au démarrage.
-# Un fstab minimal sera injecté après la création du squashfs.
+# Passage 1 : tout le système sauf /etc/fstab
 mksquashfs $SQSFDIR /respinguy-build-dir/LiveOS/squashfs.img \
     -comp xz \
     -b 1024K \
@@ -141,10 +125,10 @@ mksquashfs $SQSFDIR /respinguy-build-dir/LiveOS/squashfs.img \
     -keep-as-directory \
     -noappend \
     -wildcards \
-    -e "proc/*"   "proc/.*" \
-    -e "run/*"    "run/.*" \
-    -e "tmp/*"    "tmp/.*" \
-    -e "sys/*"    "sys/.*" \
+    -e "proc/*"  "proc/.*" \
+    -e "run/*"   "run/.*" \
+    -e "tmp/*"   "tmp/.*" \
+    -e "sys/*"   "sys/.*" \
     -e "dev/*" \
     -e "var/crash/*" \
     -e "var/tmp/*" \
@@ -153,85 +137,32 @@ mksquashfs $SQSFDIR /respinguy-build-dir/LiveOS/squashfs.img \
     -e "etc/fstab"
 
 if [ $? -ne 0 ]; then
-    echo "[ERREUR] Échec de la création du squashfs."
+    echo "[ERREUR] Échec passage 1 du squashfs."
+    rm -rf "$RPG_FSTAB_DIR"
     exit 1
 fi
 
-# --- INJECTION DU FSTAB LIVE ---
-# On monte le squashfs en loop, on injecte un fstab minimal adapté au
-# live, puis on le démonte. Cela évite l'erreur systemd-remount-fs au boot.
-echo "Injection du fstab live dans le squashfs..."
-SQMOUNT=$(mktemp -d /tmp/rpg-sqmount.XXXXXX)
-mount -o loop /respinguy-build-dir/LiveOS/squashfs.img "$SQMOUNT" 2>/dev/null
+# Passage 2 : on ajoute uniquement le fstab live par dessus
+mksquashfs "$RPG_FSTAB_DIR/etc/fstab" /respinguy-build-dir/LiveOS/squashfs.img \
+    -no-progress \
+    -p "etc d 755 0 0" \
+    -p "etc/fstab f 644 0 0 cat $RPG_FSTAB_DIR/etc/fstab"
 
-if [ $? -eq 0 ]; then
-    # Le squashfs est monté en lecture seule, on utilise une overlay
-    SQWORK=$(mktemp -d /tmp/rpg-sqwork.XXXXXX)
-    SQUPPER=$(mktemp -d /tmp/rpg-squpper.XXXXXX)
-    SQMERGE=$(mktemp -d /tmp/rpg-sqmerge.XXXXXX)
-    mount -t overlay overlay \
-        -o lowerdir="$SQMOUNT",upperdir="$SQUPPER",workdir="$SQWORK" \
-        "$SQMERGE" 2>/dev/null
-
-    if [ $? -eq 0 ]; then
-        # Écriture du fstab live minimal
-        cat > "$SQMERGE/etc/fstab" << 'FSTABEOF'
-# /etc/fstab - ResPinGuy Live
-# Ce fstab est généré automatiquement pour le mode live.
-# Il ne contient pas les UUID du système source.
-tmpfs   /tmp     tmpfs   defaults,noatime  0 0
-tmpfs   /run     tmpfs   defaults,noatime  0 0
-FSTABEOF
-        # Reconstruction du squashfs avec le fstab injecté
-        umount "$SQMERGE"
-        mksquashfs "$SQMOUNT" "$SQUPPER" /respinguy-build-dir/LiveOS/squashfs.img \
-            -comp xz -b 1024K -always-use-fragments -keep-as-directory -noappend \
-            -wildcards \
-            -e "proc/*" "run/*" "tmp/*" "sys/*" "dev/*"
-        umount "$SQMOUNT"
-        rmdir "$SQMOUNT" "$SQWORK" "$SQUPPER" "$SQMERGE"
-        echo "[OK] fstab live injecté."
-    else
-        # Overlay non disponible : on reconstruit directement
-        umount "$SQMOUNT"
-        rmdir "$SQMOUNT"
-        echo "[INFO] Overlay non disponible, reconstruction du squashfs avec fstab live..."
-        SQEXTRACT=$(mktemp -d /tmp/rpg-sqextract.XXXXXX)
-        unsquashfs -d "$SQEXTRACT" /respinguy-build-dir/LiveOS/squashfs.img
-        cat > "$SQEXTRACT/etc/fstab" << 'FSTABEOF'
-# /etc/fstab - ResPinGuy Live
-tmpfs   /tmp     tmpfs   defaults,noatime  0 0
-tmpfs   /run     tmpfs   defaults,noatime  0 0
-FSTABEOF
-        rm /respinguy-build-dir/LiveOS/squashfs.img
-        mksquashfs "$SQEXTRACT" /respinguy-build-dir/LiveOS/squashfs.img \
-            -comp xz -b 1024K -always-use-fragments -keep-as-directory -noappend \
-            -wildcards \
-            -e "proc/*" "run/*" "tmp/*" "sys/*" "dev/*"
-        rm -rf "$SQEXTRACT"
-        echo "[OK] fstab live injecté (via unsquashfs)."
-    fi
-else
-    rmdir "$SQMOUNT"
-    echo "[ATTENTION] Impossible de monter le squashfs pour injection du fstab."
+if [ $? -ne 0 ]; then
+    echo "[ATTENTION] Impossible d'injecter le fstab live dans le squashfs."
     echo "            Le boot live pourrait avoir des erreurs de montage."
-    echo "            Assurez-vous que le module squashfs est chargé : modprobe squashfs"
 fi
 
-echo "Squashfs terminé."
+rm -rf "$RPG_FSTAB_DIR"
+echo "Squashfs créé : $(du -sh /respinguy-build-dir/LiveOS/squashfs.img | cut -f1)"
 read -p "Appuyez sur Entrée pour continuer..."
 
-#_____________________________________________________________________________________________
-# Restauration de /etc/skel si RPGCONFIGUSER était actif
 if [ -n "$RPGCONFIGUSER" ]; then
     bash /usr/share/ResPinGuy-File/script/rcurm
 fi
 
 #_____________________________________________________________________________________________
-# Création de l'initrd avec dracut
 echo "Création de l'initrd..."
-
-# Dracut avec options adaptées pour un maximum de distros
 dracut \
     -N \
     --add "dmsquash-live" \
@@ -241,46 +172,27 @@ dracut \
     --force \
     /respinguy-build-dir/initrd
 
-if [ $? -ne 0 ]; then
-    echo "[ERREUR] Échec de la création de l'initrd."
-    echo "         Essayez : dracut --list-modules | grep dmsquash"
-    exit 1
-fi
-echo "initrd créé."
+if [ $? -ne 0 ]; then echo "[ERREUR] Échec de la création de l'initrd."; exit 1; fi
+echo "initrd créé : $(du -sh /respinguy-build-dir/initrd | cut -f1)"
 read -p "Appuyez sur Entrée pour continuer..."
 
 #_____________________________________________________________________________________________
-# Création de l'image ISO finale
 echo "Création de l'image ISO..."
 cd / || exit 1
-
 xorriso -as mkisofs \
-    -r \
-    -J \
-    -joliet-long \
-    -l \
-    -iso-level 3 \
-    -cache-inodes \
+    -r -J -joliet-long -l -iso-level 3 -cache-inodes \
     -isohybrid-mbr /usr/share/ResPinGuy-File/fichier/isohdpfx.bin \
-    -partition_offset 16 \
-    -A "$RPGBUILDNAME" \
-    -b isolinux/isolinux.bin \
-    -c isolinux/boot.cat \
-    -no-emul-boot \
-    -boot-load-size 4 \
-    -boot-info-table \
+    -partition_offset 16 -A "$RPGBUILDNAME" \
+    -b isolinux/isolinux.bin -c isolinux/boot.cat \
+    -no-emul-boot -boot-load-size 4 -boot-info-table \
     -o "$RPGHOME/$RPGBUILDNAME-$ARCH.iso" \
     /respinguy-build-dir/
 
-if [ $? -ne 0 ]; then
-    echo "[ERREUR] Échec de la création de l'image ISO."
-    exit 1
-fi
+if [ $? -ne 0 ]; then echo "[ERREUR] Échec de la création de l'ISO."; exit 1; fi
 
 clear
 echo "_ _ _"
 echo "Build terminé avec succès !"
-echo "Votre ISO est disponible dans : $RPGHOME/$RPGBUILDNAME-$ARCH.iso"
+echo "ISO : $RPGHOME/$RPGBUILDNAME-$ARCH.iso"
 echo "Taille : $(du -sh "$RPGHOME/$RPGBUILDNAME-$ARCH.iso" | cut -f1)"
 echo "_ _ _"
-#_____________________________________________________________________________________________
