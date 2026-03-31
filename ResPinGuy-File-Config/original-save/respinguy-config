@@ -1,37 +1,78 @@
 #!/bin/bash
+# ResPinGuy - Fichier de configuration
+# Emplacement : /usr/share/ResPinGuy-File-Config/respinguy-config
 #_____________________________________________________________________________________________
-# Modifiable :
-#
-# Nom de l'image :
+
+# Nom de l'image ISO générée
 RPGBUILDNAME="Respinguy-Custom"
-# Repertoire ISO final
+
+# Dossier de destination de l'ISO final
 RPGHOME=/home/ResPinGuy
-#
-# Repertoire utilisateur
-#HOME=/home/?/
-# /home/... dans l'iso (sans persistance dans système installer)
-#RPGCONFIGUSER= sh ./usr/share/ResPinGuy-File/script/rcu
-# /home/... dans l'iso (avec persistance dans système installer)
-#RPGCONFIGUSERPERS= sh ./usr/share/ResPinGuy-File/script/rcup
-#
+
 #_____________________________________________________________________________________________
+# Configuration du répertoire home utilisateur (décommentez UNE seule option)
 #
-# Modifiable en fonction de la Distribution !
+# Répertoire home à inclure :
+#HOME=/home/monuser/
 #
-# Emplacement du noyaux dans le système :
-VMLINUZ=/boot/vmlinuz-$(uname -r)
-# Emplacement de initramfs dans le système :
-INITRD=/boot/initrd-$(uname -r)
+# Option 1 : inclure $HOME dans l'ISO uniquement (sans persistance après install)
+#RPGCONFIGUSER=1
 #
+# Option 2 : inclure $HOME dans l'ISO ET sur le système installé (avec persistance)
+#RPGCONFIGUSERPERS=1
+
 #_____________________________________________________________________________________________
-# Non-Modifiable (expert) :
-#
-# Version du kernel (noyaux) Linux :
+# Détection automatique du kernel selon la distro
+# (vous pouvez forcer manuellement en décommentant une ligne)
+
 KERNEL=$(uname -r)
+
+# Debian / Ubuntu / Linux Mint
+if [ -f "/boot/vmlinuz-$KERNEL" ]; then
+    VMLINUZ="/boot/vmlinuz-$KERNEL"
+
+# Fedora / RHEL / CentOS / OpenSUSE
+elif [ -f "/boot/vmlinuz-$KERNEL" ]; then
+    VMLINUZ="/boot/vmlinuz-$KERNEL"
+
+# Arch Linux (kernel générique)
+elif [ -f "/boot/vmlinuz-linux" ]; then
+    VMLINUZ="/boot/vmlinuz-linux"
+
+# Arch Linux (kernel LTS)
+elif [ -f "/boot/vmlinuz-linux-lts" ]; then
+    VMLINUZ="/boot/vmlinuz-linux-lts"
+
+# Gentoo
+elif [ -f "/boot/kernel-$KERNEL" ]; then
+    VMLINUZ="/boot/kernel-$KERNEL"
+
+# Fallback : recherche automatique
+else
+    VMLINUZ=$(ls /boot/vmlinuz* 2>/dev/null | head -1)
+    if [ -z "$VMLINUZ" ]; then
+        VMLINUZ=$(ls /boot/kernel* 2>/dev/null | head -1)
+    fi
+fi
+
+# Vérification finale
+if [ -z "$VMLINUZ" ] || [ ! -f "$VMLINUZ" ]; then
+    echo "[ERREUR] Impossible de détecter le kernel automatiquement."
+    echo "         Kernels disponibles :"
+    ls /boot/vmlinuz* /boot/kernel* 2>/dev/null
+    echo "         Forcez manuellement la variable VMLINUZ dans ce fichier."
+    exit 1
+fi
+
+#_____________________________________________________________________________________________
+# Variables automatiques (ne pas modifier)
+
 # Architecture du CPU
 ARCH=$(uname -m)
-# Dossier de la racine (/) qui seront build (si vous ajoutez, ne pas mettre de /)
+
+# Dossiers de la racine (/) à inclure dans le squashfs
+# Ne pas mettre de / devant
+# Ne pas inclure : proc sys tmp run dev (gérés automatiquement)
 ROOTDIR="bin boot etc home lib lib64 opt root sbin srv usr var"
-# Nettoyer les fichiers cache (ne pas activer ! Ne fonctionne pas !)
-#CLEANCACHE=$(-noappend -wildcards -e "proc/*" -e "proc/.*" -e "run/*" -e "run/.*" -e "tmp/*" -e "tmp/.*" -e "var/crash/*" -e "var/crash/.*" -e "swapfile" -e "root/.bash_history" -e "root/.cache" -e "root/.wget-hsts" -e "home/*/.bash_history" -e "home/*/.cache" -e "home/*/.wget-hsts" -e "$RPGHOME" )
+
 #_____________________________________________________________________________________________
