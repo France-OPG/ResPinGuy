@@ -106,6 +106,22 @@ FSTABEOF
 
 echo "[OK] /etc live préparé dans $RPG_ETC_TMP"
 
+# Désactivation des services bloquants en mode live
+# On crée des symlinks vers /dev/null (méthode systemd standard pour masquer un service)
+# Ces services n'ont aucun sens en live et bloquent le boot
+SYSTEMD_DIR="$RPG_ETC_TMP/systemd/system"
+mkdir -p "$SYSTEMD_DIR"
+
+# Réseau : ne pas attendre que le réseau soit configuré
+ln -sf /dev/null "$SYSTEMD_DIR/systemd-networkd-wait-online.service"
+# NFS/RPC : inutile en live
+ln -sf /dev/null "$SYSTEMD_DIR/rpcbind.service"
+ln -sf /dev/null "$SYSTEMD_DIR/rpcbind.socket"
+# nftables : peut échouer sans config
+ln -sf /dev/null "$SYSTEMD_DIR/nftables.service"
+
+echo "[OK] Services bloquants désactivés pour le live."
+
 #_____________________________________________________________________________________________
 # CONSTRUCTION DE LA LISTE DES DOSSIERS POUR mksquashfs
 # On remplace /etc par le dossier temporaire dans la liste des sources.
