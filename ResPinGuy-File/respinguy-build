@@ -88,36 +88,44 @@ elif [ -n "$RPGCONFIGUSERPERS" ]; then
 fi
 
 #_____________________________________________________________________________________________
-# CRÉATION DU FSTAB LIVE DANS UN DOSSIER TEMPORAIRE
+# PRÉPARATION DU /etc LIVE
+# On copie /etc dans un dossier temporaire et on y remplace fstab.
 # Le système source n'est JAMAIS modifié.
-# On crée un fstab live dans /tmp/rpg-fstab-overlay/etc/
-# puis on l'ajoute au squashfs en second passage avec -e "etc/fstab"
-# pour exclure l'original et -p pour injecter le nôtre.
-echo "Préparation du fstab live..."
-RPG_FSTAB_DIR=$(mktemp -d /tmp/rpg-fstab.XXXXXX)
-mkdir -p "$RPG_FSTAB_DIR/etc"
-cat > "$RPG_FSTAB_DIR/etc/fstab" << 'FSTABEOF'
+# mksquashfs reçoit le dossier /etc temporaire à la place du vrai /etc.
+echo "Préparation du /etc live (fstab)..."
+RPG_ETC_TMP=$(mktemp -d /tmp/rpg-etc.XXXXXX)
+cp -a /etc/. "$RPG_ETC_TMP/"
+
+cat > "$RPG_ETC_TMP/fstab" << 'FSTABEOF'
 # /etc/fstab - ResPinGuy Live
 # Généré automatiquement par ResPinGuy pour le démarrage en mode live.
 # Les UUID du système source ont été retirés volontairement.
 tmpfs   /tmp     tmpfs   defaults,noatime  0 0
 tmpfs   /run     tmpfs   defaults,noatime  0 0
 FSTABEOF
-echo "[OK] fstab live préparé dans $RPG_FSTAB_DIR"
+
+echo "[OK] /etc live préparé dans $RPG_ETC_TMP"
 
 #_____________________________________________________________________________________________
+# CONSTRUCTION DE LA LISTE DES DOSSIERS POUR mksquashfs
+# On remplace /etc par le dossier temporaire dans la liste des sources.
 echo "Création du squashfs..."
 SQSFDIR=""
 for i in $ROOTDIR; do
-    [ -d "/$i" ] && SQSFDIR="$SQSFDIR /$i"
+    if [ "$i" = "etc" ]; then
+        # On utilise le /etc temporaire à la place du vrai
+        [ -d "$RPG_ETC_TMP" ] && SQSFDIR="$SQSFDIR $RPG_ETC_TMP"
+    else
+        [ -d "/$i" ] && SQSFDIR="$SQSFDIR /$i"
+    fi
 done
+
 if [ -z "$SQSFDIR" ]; then
     echo "[ERREUR] Aucun dossier valide dans ROOTDIR."
-    rm -rf "$RPG_FSTAB_DIR"
+    rm -rf "$RPG_ETC_TMP"
     exit 1
 fi
 
-# Passage 1 : tout le système sauf /etc/fstab
 mksquashfs $SQSFDIR /respinguy-build-dir/LiveOS/squashfs.img \
     -comp xz \
     -b 1024K \
@@ -133,27 +141,16 @@ mksquashfs $SQSFDIR /respinguy-build-dir/LiveOS/squashfs.img \
     -e "var/crash/*" \
     -e "var/tmp/*" \
     -e "root/.bash_history" "root/.cache" "root/.wget-hsts" \
-    -e "home/*/.bash_history" "home/*/.cache" "home/*/.wget-hsts" \
-    -e "etc/fstab"
+    -e "home/*/.bash_history" "home/*/.cache" "home/*/.wget-hsts"
 
-if [ $? -ne 0 ]; then
-    echo "[ERREUR] Échec passage 1 du squashfs."
-    rm -rf "$RPG_FSTAB_DIR"
+SQUASHFS_RESULT=$?
+rm -rf "$RPG_ETC_TMP"
+
+if [ $SQUASHFS_RESULT -ne 0 ]; then
+    echo "[ERREUR] Échec de la création du squashfs."
     exit 1
 fi
 
-# Passage 2 : on ajoute uniquement le fstab live par dessus
-mksquashfs "$RPG_FSTAB_DIR/etc/fstab" /respinguy-build-dir/LiveOS/squashfs.img \
-    -no-progress \
-    -p "etc d 755 0 0" \
-    -p "etc/fstab f 644 0 0 cat $RPG_FSTAB_DIR/etc/fstab"
-
-if [ $? -ne 0 ]; then
-    echo "[ATTENTION] Impossible d'injecter le fstab live dans le squashfs."
-    echo "            Le boot live pourrait avoir des erreurs de montage."
-fi
-
-rm -rf "$RPG_FSTAB_DIR"
 echo "Squashfs créé : $(du -sh /respinguy-build-dir/LiveOS/squashfs.img | cut -f1)"
 read -p "Appuyez sur Entrée pour continuer..."
 
