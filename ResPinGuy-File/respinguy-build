@@ -107,18 +107,109 @@ FSTABEOF
 echo "[OK] /etc live préparé dans $RPG_ETC_TMP"
 
 # Désactivation des services bloquants en mode live
-# On crée des symlinks vers /dev/null (méthode systemd standard pour masquer un service)
-# Ces services n'ont aucun sens en live et bloquent le boot
+# On copie d'abord les symlinks systemd existants du système,
+# puis on masque les services bloquants selon la distro détectée.
 SYSTEMD_DIR="$RPG_ETC_TMP/systemd/system"
 mkdir -p "$SYSTEMD_DIR"
 
-# Réseau : ne pas attendre que le réseau soit configuré
-ln -sf /dev/null "$SYSTEMD_DIR/systemd-networkd-wait-online.service"
-# NFS/RPC : inutile en live
-ln -sf /dev/null "$SYSTEMD_DIR/rpcbind.service"
-ln -sf /dev/null "$SYSTEMD_DIR/rpcbind.socket"
-# nftables : peut échouer sans config
-ln -sf /dev/null "$SYSTEMD_DIR/nftables.service"
+if [ -d "/etc/systemd/system/" ]; then
+    cp -a /etc/systemd/system/. "$SYSTEMD_DIR/" 2>/dev/null
+fi
+
+# Détection de la distro via /etc/os-release
+DISTRO_ID=""
+DISTRO_LIKE=""
+if [ -f /etc/os-release ]; then
+    DISTRO_ID=$(grep "^ID=" /etc/os-release | cut -d= -f2 | tr -d '"' | tr '[:upper:]' '[:lower:]')
+    DISTRO_LIKE=$(grep "^ID_LIKE=" /etc/os-release | cut -d= -f2 | tr -d '"' | tr '[:upper:]' '[:lower:]')
+fi
+echo "[INFO] Distro détectée : $DISTRO_ID (famille : $DISTRO_LIKE)"
+
+# Services à désactiver sur TOUTES les distros
+SERVICES_COMMON="
+    systemd-networkd-wait-online.service
+    NetworkManager-wait-online.service
+    systemd-resolved.service
+"
+
+# Services spécifiques Debian/Ubuntu
+SERVICES_DEBIAN="
+    rpcbind.service
+    rpcbind.socket
+    nftables.service
+    keyboard-setup.service
+    plymouth.service
+    plymouth-quit.service
+    plymouth-quit-wait.service
+"
+
+# Services spécifiques Fedora/RHEL/CentOS
+SERVICES_RPM="
+    firewalld.service
+    rpcbind.service
+    rpcbind.socket
+    nftables.service
+    plymouth.service
+    plymouth-quit.service
+    plymouth-quit-wait.service
+    kdump.service
+    abrtd.service
+"
+
+# Services spécifiques Arch/Manjaro
+SERVICES_ARCH="
+    iptables.service
+    ip6tables.service
+    nftables.service
+    systemd-boot-update.service
+"
+
+# Services spécifiques OpenSUSE
+SERVICES_OPENSUSE="
+    firewalld.service
+    nftables.service
+    rpcbind.service
+    rpcbind.socket
+    wicked.service
+    wickedd.service
+"
+
+# Construction de la liste finale selon la distro
+SERVICES_TO_MASK="$SERVICES_COMMON"
+
+case "$DISTRO_ID" in
+    debian|ubuntu|linuxmint|pop|kali|raspbian|elementary|zorin)
+        SERVICES_TO_MASK="$SERVICES_TO_MASK $SERVICES_DEBIAN" ;;
+    fedora|rhel|centos|almalinux|rocky|ol)
+        SERVICES_TO_MASK="$SERVICES_TO_MASK $SERVICES_RPM" ;;
+    arch|manjaro|endeavouros|garuda)
+        SERVICES_TO_MASK="$SERVICES_TO_MASK $SERVICES_ARCH" ;;
+    opensuse*|sles)
+        SERVICES_TO_MASK="$SERVICES_TO_MASK $SERVICES_OPENSUSE" ;;
+    *)
+        # Famille détectée via ID_LIKE
+        case "$DISTRO_LIKE" in
+            *debian*|*ubuntu*)
+                SERVICES_TO_MASK="$SERVICES_TO_MASK $SERVICES_DEBIAN" ;;
+            *fedora*|*rhel*|*centos*)
+                SERVICES_TO_MASK="$SERVICES_TO_MASK $SERVICES_RPM" ;;
+            *arch*)
+                SERVICES_TO_MASK="$SERVICES_TO_MASK $SERVICES_ARCH" ;;
+            *suse*)
+                SERVICES_TO_MASK="$SERVICES_TO_MASK $SERVICES_OPENSUSE" ;;
+            *)
+                # Distro inconnue : on applique tous les services par sécurité
+                SERVICES_TO_MASK="$SERVICES_TO_MASK $SERVICES_DEBIAN $SERVICES_RPM $SERVICES_ARCH $SERVICES_OPENSUSE"
+                echo "[INFO] Distro inconnue, désactivation large des services bloquants." ;;
+        esac ;;
+esac
+
+# Application du masquage
+for SERVICE in $SERVICES_TO_MASK; do
+    [ -z "$SERVICE" ] && continue
+    ln -sf /dev/null "$SYSTEMD_DIR/$SERVICE"
+    find "$SYSTEMD_DIR" -name "$SERVICE" -type l ! -path "$SYSTEMD_DIR/$SERVICE" -delete 2>/dev/null
+done
 
 echo "[OK] Services bloquants désactivés pour le live."
 
