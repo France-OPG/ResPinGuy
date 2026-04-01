@@ -259,7 +259,14 @@ mksquashfs $SQSFDIR /respinguy-build-dir/LiveOS/squashfs.img \
     -e "var/crash/*" \
     -e "var/tmp/*" \
     -e "root/.bash_history" "root/.cache" "root/.wget-hsts" \
-    -e "home/*/.bash_history" "home/*/.cache" "home/*/.wget-hsts"
+    -e "home/*/.bash_history" "home/*/.cache" "home/*/.wget-hsts" \
+    -e "usr/sbin/rpcbind" \
+    -e "lib/systemd/system/rpcbind*" \
+    -e "lib/systemd/system/nfs*" \
+    -e "lib/systemd/system/nftables*" \
+    -e "usr/sbin/nft" \
+    -e "lib/systemd/system/keyboard-setup*" \
+    -e "lib/systemd/system/systemd-networkd-wait-online*"
 
 SQUASHFS_RESULT=$?
 rm -rf "$RPG_ETC_TMP"
