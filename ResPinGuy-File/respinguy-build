@@ -107,14 +107,25 @@ FSTABEOF
 echo "[OK] /etc live préparé dans $RPG_ETC_TMP"
 
 # Désactivation des services bloquants en mode live
-# On copie d'abord les symlinks systemd existants du système,
-# puis on masque les services bloquants selon la distro détectée.
+# systemd cherche les overrides dans /etc/systemd/system/ EN PRIORITÉ sur /lib/systemd/system/
+# Un symlink /etc/systemd/system/service.service -> /dev/null masque TOTALEMENT le service,
+# même s'il existe dans /lib/systemd/system/
 SYSTEMD_DIR="$RPG_ETC_TMP/systemd/system"
 mkdir -p "$SYSTEMD_DIR"
 
+# Copie des overrides existants depuis /etc/systemd/system/
 if [ -d "/etc/systemd/system/" ]; then
     cp -a /etc/systemd/system/. "$SYSTEMD_DIR/" 2>/dev/null
 fi
+
+# Copie également des dossiers .wants et .requires depuis /lib/systemd/system/
+# pour qu'on puisse supprimer les liens qui y activent les services bloquants
+for WANTS_DIR in /lib/systemd/system/*.wants /lib/systemd/system/*.requires; do
+    [ -d "$WANTS_DIR" ] || continue
+    DIRNAME=$(basename "$WANTS_DIR")
+    mkdir -p "$SYSTEMD_DIR/$DIRNAME"
+    cp -a "$WANTS_DIR/." "$SYSTEMD_DIR/$DIRNAME/" 2>/dev/null
+done
 
 # Détection de la distro via /etc/os-release
 DISTRO_ID=""
