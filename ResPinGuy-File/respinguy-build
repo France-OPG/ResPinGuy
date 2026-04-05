@@ -285,14 +285,7 @@ fi
 
 #_____________________________________________________________________________________________
 echo "Création de l'initrd..."
-dracut \
-    -N \
-    --add "dmsquash-live" \
-    --add "pollcdrom" \
-    --omit "iscsi nbd fcoe fcoe-uefi" \
-    --kver "$KERNEL" \
-    --force \
-    /respinguy-build-dir/initrd
+dracut -N -a dmsquash-live --kver "$KERNEL" /respinguy-build-dir/initrd --force
 
 if [ $? -ne 0 ]; then echo "[ERREUR] Échec de la création de l'initrd."; exit 1; fi
 echo "initrd créé : $(du -sh /respinguy-build-dir/initrd | cut -f1)"
