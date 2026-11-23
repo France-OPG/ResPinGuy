@@ -21,6 +21,8 @@ L_MENU_HOME="Início"
 L_MENU_PROMPT="O que você quer fazer?"
 L_MENU_BUILD="Criar a imagem ISO"
 L_MENU_CONFIG="Configuração"
+L_MENU_SETTINGS="Configurações e info"
+L_SETTINGS_PROMPT="Escolha uma ação."
 L_MENU_DEPS="Verificar dependências"
 L_MENU_UPDATE="Atualizar ResPinGuy"
 L_MENU_REMOVE="Remover ResPinGuy"
@@ -307,6 +309,7 @@ AMBIENTE
   RPG_UI_ENGINE=basic     Força o menu de texto (redimensionamento ao vivo)
   RPG_FORCE_COLOR=1       Força as cores ANSI do menu de texto
   NO_COLOR=1              Desativa as cores
+  RPG_NO_MOUSE=1          Desativa o mouse no menu de texto
 
 ResPinGuy Oficial [r]"
 

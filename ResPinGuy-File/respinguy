@@ -370,9 +370,22 @@ ui_text() {
 # Couche d'affichage : menu texte simple (fallback)
 # Tout l'affichage part sur stderr pour que la valeur choisie reste sur stdout.
 
+# Souris en mode texte (protocole X10 + SGR)
+rpg_mouse_on() {
+    [ "$RPG_UI" = "basic" ] || return 0
+    [ -z "${RPG_NO_MOUSE-}" ] || return 0
+    [ -t 2 ] || return 0
+    printf '\033[?1000h\033[?1006h' >&2
+}
+
+rpg_mouse_off() {
+    [ "$RPG_UI" = "basic" ] || return 0
+    [ -t 2 ] || return 0
+    printf '\033[?1000l\033[?1006l' >&2
+}
+
 # Barre de titre : "ResPinGuy" a gauche en jaune, titre de la page a droite.
-rpg_basic_header() {
-    local title="$1"
+rpg_basic_header() {    local title="$1"
     local tcol="${2-$C_YELLOW}"
     printf '%s%s %s%s - %s%s%s\n' \
         "$C_BOLD" "$C_YELLOW" "$RPG_BACKTITLE" "$C_BLUE" "$tcol" "$title" "$C_RESET"
@@ -388,13 +401,26 @@ rpg_basic_rule() {
     printf '%s%s%s\n' "$C_BLUE" "$line" "$C_RESET"
 }
 
+# Tronque chaque ligne d'un bloc de texte a la largeur donnee
+rpg_fit_block() {
+    local text="$1"
+    local cols="$2"
+    local line out=""
+    while IFS= read -r line; do
+        [ "${#line}" -gt "$cols" ] && line="${line:0:cols}"
+        out+="$line"
+        out+=$'\n'
+    done <<< "$text"
+    printf '%s' "${out%$'\n'}"
+}
+
 basic_menu() {
     local title="$1"
     local prompt="$2"
     shift 2
     local -a tags=()
     local -a labels=()
-    local i n rc lastsize cancel
+    local i rc lastsize cancel ch buf seq body cb cx cy row prompt_lines cols lbl
     while [ $# -ge 2 ]; do
         tags+=("$1")
         labels+=("$2")
@@ -404,7 +430,13 @@ basic_menu() {
     cancel="$L_BTN_BACK"
     [ "${UI_CANCEL_KEY-}" = "quit" ] && cancel="$L_BTN_QUIT"
 
+    # Lignes du prompt : necessaire pour mapper les clics sur les entrees
+    local _nl="${prompt//$'\n'/}"
+    prompt_lines=$(( ${#prompt} - ${#_nl} + 1 ))
+    cols=$(rpg_term_cols)
+
     lastsize=$(rpg_term_size_str)
+    rpg_mouse_on
 
     while :; do
         {
@@ -412,37 +444,97 @@ basic_menu() {
             printf '%s%s' "$C_BLACK_BG" "$C_YELLOW"
             rpg_basic_header "$title"
             rpg_basic_rule
-            printf '%s%s\n\n' "$C_YELLOW" "$prompt"
+            printf '%s%s\n\n' "$C_YELLOW" "$(rpg_fit_block "$prompt" $((cols - 1)))"
             for ((i = 0; i < ${#tags[@]}; i++)); do
-                printf '  %s%2d)%s %s\n' "$C_YELLOW" "$((i + 1))" "$C_YELLOW" "${labels[$i]}"
+                lbl="${labels[$i]}"
+                [ "${#lbl}" -gt $((cols - 8)) ] && lbl="${lbl:0:$((cols - 8))}"
+                printf '  %s%2d)%s %s\n' "$C_YELLOW" "$((i + 1))" "$C_YELLOW" "$lbl"
             done
             printf '\n   %sq)%s %s\n\n' "$C_YELLOW" "$C_YELLOW" "$cancel"
             printf '%s%s%s ' "$C_YELLOW" "$L_PROMPT_CHOICE" "$C_RESET"
         } >&2
 
-        # Attend une touche, mais redessine si la fenetre change de taille.
+        buf=""
         while :; do
-            read -r -t 0.25 n
+            IFS= read -rsn1 -t 0.25 ch
             rc=$?
-            if [ $rc -eq 0 ]; then
-                break
-            fi
-            if [ $rc -le 128 ]; then
+            if [ $rc -eq 130 ]; then
+                printf '\n' >&2
+                rpg_mouse_off
                 return 1
             fi
-            if [ "$(rpg_term_size_str)" != "$lastsize" ]; then
-                lastsize=$(rpg_term_size_str)
-                continue 2
+            if [ $rc -gt 128 ]; then
+                if [ "$(rpg_term_size_str)" != "$lastsize" ]; then
+                    lastsize=$(rpg_term_size_str)
+                    continue 2
+                fi
+                continue
+            elif [ $rc -ne 0 ]; then
+                rpg_mouse_off
+                return 1
             fi
-        done
 
-        case "$n" in
-            q|Q) return 1 ;;
-        esac
-        if [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -ge 1 ] && [ "$n" -le ${#tags[@]} ]; then
-            printf '%s' "${tags[$((n - 1))]}"
-            return 0
-        fi
+            case "$ch" in
+                q|Q)
+                    printf '\n' >&2
+                    rpg_mouse_off
+                    return 1 ;;
+                $'\n'|$'\r')
+                    printf '\n' >&2
+                    if [ -n "$buf" ] && [[ "$buf" =~ ^[0-9]+$ ]] \
+                       && [ "$buf" -ge 1 ] && [ "$buf" -le ${#tags[@]} ]; then
+                        rpg_mouse_off
+                        printf '%s' "${tags[$((buf - 1))]}"
+                        return 0
+                    fi
+                    buf="" ;;
+                $'\177'|$'\b')
+                    if [ -n "$buf" ]; then
+                        buf="${buf%?}"
+                        printf '\b \b' >&2
+                    fi ;;
+                $'\033')
+                    seq=""
+                    while IFS= read -rsn1 -t 0.05 ch; do
+                        seq+="$ch"
+                        case "$seq" in
+                            \[*[Mm]) break ;;
+                        esac
+                    done
+                    if [ -z "$seq" ]; then
+                        rpg_mouse_off
+                        return 1
+                    fi
+                    # Souris SGR : ESC [ < bouton ; x ; y M
+                    case "$seq" in
+                        \[\<*M)
+                            body="${seq#\[<}"
+                            body="${body%M}"
+                            cb="${body%%;*}"
+                            cx="${body#*;}"
+                            cy="${cx#*;}"
+                            cx="${cx%%;*}"
+                            if [[ "$cb" =~ ^[0-9]+$ ]] && [ "$cb" -lt 64 ] \
+                               && [ $((cb & 3)) -eq 0 ] && [[ "$cy" =~ ^[0-9]+$ ]]; then
+                                row=$(( cy - 4 - prompt_lines ))
+                                if [ "$row" -ge 0 ] && [ "$row" -lt ${#tags[@]} ]; then
+                                    rpg_mouse_off
+                                    printf '%s' "${tags[$row]}"
+                                    return 0
+                                fi
+                                if [ "$cy" -eq $(( 5 + prompt_lines + ${#tags[@]} )) ]; then
+                                    rpg_mouse_off
+                                    return 1
+                                fi
+                            fi ;;
+                    esac ;;
+                [[:digit:]])
+                    buf+="$ch"
+                    printf '%s' "$ch" >&2 ;;
+                *)
+                    : ;;
+            esac
+        done
     done
 }
 
@@ -1050,6 +1142,32 @@ action_language() {
 }
 
 #_____________________________________________________________________________________________
+# Action : parametres et info
+
+action_settings() {
+    local choice
+    UI_CANCEL_KEY="back"
+    while :; do
+        rpg_load_effective
+        choice=$(ui_menu "$L_MENU_SETTINGS" "$L_SETTINGS_PROMPT" \
+            deps   "$L_MENU_DEPS" \
+            update "$L_MENU_UPDATE" \
+            remove "$L_MENU_REMOVE" \
+            lang   "$L_MENU_LANG" \
+            help   "$L_MENU_HELP" \
+            back   "$L_BTN_BACK") || return
+        case "$choice" in
+            deps)   action_deps ;;
+            update) action_update ;;
+            remove) action_remove ;;
+            lang)   action_language ;;
+            help)   action_help ;;
+            *)      return ;;
+        esac
+    done
+}
+
+#_____________________________________________________________________________________________
 # Menu principal
 
 main_menu() {
@@ -1058,24 +1176,16 @@ main_menu() {
         UI_CANCEL_KEY="quit"
         rpg_load_effective
         choice=$(ui_menu "$L_MENU_HOME" "$(rpg_status_main)" \
-            build  "$L_MENU_BUILD" \
-            config "$L_MENU_CONFIG" \
-            deps   "$L_MENU_DEPS" \
-            update "$L_MENU_UPDATE" \
-            remove "$L_MENU_REMOVE" \
-            lang   "$L_MENU_LANG" \
-            help   "$L_MENU_HELP" \
-            quit   "$L_MENU_QUIT") || break
+            build    "$L_MENU_BUILD" \
+            config   "$L_MENU_CONFIG" \
+            settings "$L_MENU_SETTINGS" \
+            quit     "$L_MENU_QUIT") || break
 
         case "$choice" in
-            build)  action_build ;;
-            config) action_config ;;
-            deps)   action_deps ;;
-            update) action_update ;;
-            remove) action_remove ;;
-            lang)   action_language ;;
-            help)   action_help ;;
-            *)      break ;;
+            build)    action_build ;;
+            config)   action_config ;;
+            settings) action_settings ;;
+            *)        break ;;
         esac
     done
     clear
@@ -1092,6 +1202,10 @@ fi
 
 rpg_load_lang "$(rpg_detect_lang)"
 detect_ui
+
+# Restaure la souris du terminal en quittant
+trap 'rpg_mouse_off' EXIT
+trap 'rpg_mouse_off; exit 130' INT TERM
 
 if [ ! -f "$RPG_CONF" ]; then
     ui_error "$L_CONF_MISSING_T" "$(printf "$L_CONF_MISSING_B" "$RPG_CONF")"

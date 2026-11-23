@@ -26,8 +26,7 @@ sudo respinguy
 Actions disponibles :
 - Créer l'image ISO (avec un résumé avant lancement)
 - Configuration (nom, dossier de sortie, home, kernel, dossiers inclus)
-- Vérification et installation des dépendances
-- Mise à jour et suppression de ResPinGuy
+- Paramètres et info : dépendances, mise à jour, suppression, langue, aide
 
 Accès direct à une page :
 
@@ -64,7 +63,7 @@ Changement de langue :
 sudo respinguy --lang
 ```
 
-ou menu principal > Langue.
+ou menu principal > Paramètres et info > Langue.
 
 Le choix est mémorisé dans `/usr/share/ResPinGuy-File-Config/respinguy-config.local`
 (`RPG_LANG`). Surcharge ponctuelle :
@@ -75,6 +74,24 @@ sudo -E RPG_LANG=en respinguy
 
 Les fichiers de traduction se trouvent dans `/usr/share/ResPinGuy-File/lang/`.
 Une clé absente d'une traduction retombe automatiquement sur le français.
+
+
+### Souris
+
+La souris est prise en charge dans le **menu texte** (`RPG_UI_ENGINE=basic`) :
+
+- clic gauche sur une entrée pour la sélectionner ;
+- clic sur la ligne `q)` pour revenir ou quitter.
+
+Pendant l'affichage du menu, le terminal capture la souris (la sélection de texte
+à la souris est donc désactivée). Pour la retrouver :
+
+```bash
+sudo RPG_UI_ENGINE=basic RPG_NO_MOUSE=1 respinguy
+```
+
+`whiptail`/newt ne permet pas d'activer la souris de façon fiable.
+`dialog`, s'il est installé, la gère nativement (`RPG_UI_ENGINE=dialog`).
 
 
 ### (Version sudo) Liste des commandes avec leurs fonction :

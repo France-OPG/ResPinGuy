@@ -25,6 +25,8 @@ Les entrées les plus récentes sont en haut.
   redessine immédiatement. Les écrans whiptail reprennent la nouvelle taille
   au prochain écran (limite de newt). `RPG_UI_ENGINE=basic` force le menu texte.
 - Thème « danger » (rouge) pour les actions destructives et les erreurs.
+- Souris dans le menu texte : clic gauche pour sélectionner une entrée, clic
+  sur `q)` pour revenir. Désactivable avec `RPG_NO_MOUSE=1`.
 - Accès direct : `respinguy --build`, `--config`, `--deps`, `--help`.
 - Moteur d'affichage : `whiptail`, sinon `dialog`, sinon menu texte simple
   (aucune nouvelle dépendance obligatoire).
@@ -36,6 +38,8 @@ Les entrées les plus récentes sont en haut.
 - Section « Interface interactive » dans la documentation.
 
 ### Modifié
+- Accueil simplifié : dépendances, mise à jour, suppression, langue et aide
+  sont regroupées dans un sous-menu « Paramètres et info ».
 - `ResPinGuy-File/respinguy` : la simple liste d'aide est remplacée par la TUI.
 - `ResPinGuy-CMD/respinguy` : transmet les arguments à la TUI.
 - `ResPinGuy-CMD/respinguy-config` : ouvre la page Configuration de la TUI.

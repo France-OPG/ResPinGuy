@@ -21,6 +21,8 @@ L_MENU_HOME="Home"
 L_MENU_PROMPT="What do you want to do?"
 L_MENU_BUILD="Create the ISO image"
 L_MENU_CONFIG="Configuration"
+L_MENU_SETTINGS="Settings & info"
+L_SETTINGS_PROMPT="Choose an action."
 L_MENU_DEPS="Check dependencies"
 L_MENU_UPDATE="Update ResPinGuy"
 L_MENU_REMOVE="Remove ResPinGuy"
@@ -307,6 +309,7 @@ ENVIRONMENT
   RPG_UI_ENGINE=basic     Force the text menu (live resize)
   RPG_FORCE_COLOR=1       Force ANSI colors in the text menu
   NO_COLOR=1              Disable colors
+  RPG_NO_MOUSE=1          Disable the mouse in the text menu
 
 ResPinGuy Official [r]"
 
