@@ -29,41 +29,37 @@ UI_H=21
 UI_W=76
 
 # Couleurs ANSI du menu texte (fallback) :
-# fond noir, texte jaune, cadre bleu, selection verte, actions rouges.
+# fond noir, texte jaune, cadre bleu.
 if [ -n "${RPG_FORCE_COLOR-}" ] || { [ -t 2 ] && [ -z "${NO_COLOR-}" ]; }; then
     C_RESET=$'\033[0m'
     C_BOLD=$'\033[1m'
     C_BLACK_BG=$'\033[48;2;0;0;0m'
     C_YELLOW=$'\033[38;2;255;181;22m'
     C_BLUE=$'\033[38;2;29;47;82m'
-    C_GREEN=$'\033[38;2;115;186;37m'
-    C_RED=$'\033[38;2;238;0;0m'
 else
     C_RESET=""
     C_BOLD=""
     C_BLACK_BG=""
     C_YELLOW=""
     C_BLUE=""
-    C_GREEN=""
-    C_RED=""
 fi
 
 # Themes whiptail via NEWT_COLORS.
 # newt n'accepte que les couleurs du terminal, pas le code hex :
-# fond noir, texte jaune, cadre bleu, selection verte, boutons rouges.
+# fond noir, texte jaune, cadre bleu, selection/boutons jaune sur bleu.
 RPG_NEWT_NORMAL='root=yellow,black
 window=yellow,black
 border=blue,black
 title=yellow,black
-button=black,red
-actbutton=white,red
-compactbutton=black,red
-entry=black,yellow
+button=yellow,blue
+actbutton=yellow,blue
+compactbutton=yellow,blue
+entry=yellow,blue
 label=yellow,black
 listbox=yellow,black
 actlistbox=yellow,black
-sellistbox=black,green
-actsellistbox=black,green
+sellistbox=yellow,blue
+actsellistbox=yellow,blue
 textbox=yellow,black
 acttextbox=yellow,black
 helpline=yellow,black
@@ -73,19 +69,19 @@ disentry=gray,black'
 RPG_NEWT_DANGER='root=yellow,black
 window=yellow,black
 border=red,black
-title=white,red
-button=black,red
-actbutton=white,red
-compactbutton=black,red
-entry=black,yellow
+title=yellow,black
+button=yellow,blue
+actbutton=yellow,blue
+compactbutton=yellow,blue
+entry=yellow,blue
 label=yellow,black
 listbox=yellow,black
 actlistbox=yellow,black
-sellistbox=black,green
-actsellistbox=black,green
+sellistbox=yellow,blue
+actsellistbox=yellow,blue
 textbox=yellow,black
 acttextbox=yellow,black
-helpline=red,black
+helpline=yellow,black
 roottext=yellow,black'
 
 RPG_NEWT_THEME="$RPG_NEWT_NORMAL"
@@ -382,10 +378,10 @@ basic_menu() {
             rpg_basic_rule
             printf '%s%s\n\n' "$C_YELLOW" "$prompt"
             for ((i = 0; i < ${#tags[@]}; i++)); do
-                printf '  %s%2d)%s %s\n' "$C_GREEN" "$((i + 1))" "$C_YELLOW" "${labels[$i]}"
+                printf '  %s%2d)%s %s\n' "$C_YELLOW" "$((i + 1))" "$C_YELLOW" "${labels[$i]}"
             done
-            printf '\n   %sq)%s Quitter / Retour\n\n' "$C_RED" "$C_YELLOW"
-            printf '%sVotre choix :%s ' "$C_GREEN" "$C_RESET"
+            printf '\n   %sq)%s Quitter / Retour\n\n' "$C_YELLOW" "$C_YELLOW"
+            printf '%sVotre choix :%s ' "$C_YELLOW" "$C_RESET"
         } >&2
 
         # Attend une touche, mais redessine si la fenetre change de taille.
@@ -427,7 +423,7 @@ basic_input() {
         printf '%s%s\n' "$C_YELLOW" "$prompt"
         [ -n "$def" ] && printf '%sValeur actuelle :%s %s\n' "$C_YELLOW" "$C_YELLOW" "$def"
         printf '%s\n(Entree = garder la valeur actuelle, "-" = vider)\n' "$C_YELLOW"
-        printf '%s> %s' "$C_GREEN" "$C_RESET"
+        printf '%s> %s' "$C_YELLOW" "$C_RESET"
     } >&2
     read -r v || return 1
     if [ -z "$v" ]; then
@@ -444,14 +440,14 @@ basic_yesno() {
     local kind="${3-}"
     local r tcol
     tcol="$C_YELLOW"
-    [ "$kind" = "danger" ] && tcol="$C_RED"
+    [ "$kind" = "danger" ] && tcol="$C_YELLOW"
     {
         clear
         printf '%s%s' "$C_BLACK_BG" "$C_YELLOW"
         rpg_basic_header "$title" "$tcol"
         rpg_basic_rule
         printf '%s%s\n\n' "$C_YELLOW" "$text"
-        printf '%s[o/N]%s ' "$C_GREEN" "$C_RESET"
+        printf '%s[o/N]%s ' "$C_YELLOW" "$C_RESET"
     } >&2
     read -r r || return 1
     case "$r" in
@@ -466,14 +462,14 @@ basic_msg() {
     local kind="${3-}"
     local tcol
     tcol="$C_YELLOW"
-    [ "$kind" = "error" ] && tcol="$C_RED"
+    [ "$kind" = "error" ] && tcol="$C_YELLOW"
     {
         clear
         printf '%s%s' "$C_BLACK_BG" "$C_YELLOW"
         rpg_basic_header "$title" "$tcol"
         rpg_basic_rule
         printf '%s%s\n\n' "$C_YELLOW" "$text"
-        printf '%sAppuyez sur Entree pour continuer...%s' "$C_RED" "$C_RESET"
+        printf '%sAppuyez sur Entree pour continuer...%s' "$C_YELLOW" "$C_RESET"
     } >&2
     read -r _ || true
 }
@@ -487,7 +483,7 @@ basic_text() {
         rpg_basic_header "$title" "$C_YELLOW"
         rpg_basic_rule
         printf '%s%s\n\n' "$C_YELLOW" "$text"
-        printf '%sAppuyez sur Entree pour continuer...%s' "$C_RED" "$C_RESET"
+        printf '%sAppuyez sur Entree pour continuer...%s' "$C_YELLOW" "$C_RESET"
     } >&2
     read -r _ || true
 }
