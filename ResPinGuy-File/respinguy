@@ -29,61 +29,61 @@ UI_H=21
 UI_W=76
 
 # Couleurs ANSI du menu texte (fallback) :
-# fond vert, texte blanc, marque jaune, selection bleu nuit, cadre rouge.
+# fond jaune, texte blanc, marque verte, selection bleu nuit, cadre rouge.
 if [ -n "${RPG_FORCE_COLOR-}" ] || { [ -t 2 ] && [ -z "${NO_COLOR-}" ]; }; then
     C_RESET=$'\033[0m'
     C_BOLD=$'\033[1m'
-    C_GREEN_BG=$'\033[48;2;115;186;37m'
+    C_YELLOW_BG=$'\033[48;2;255;181;22m'
     C_WHITE=$'\033[38;2;255;255;255m'
-    C_AMBER=$'\033[38;2;255;181;22m'
+    C_GREEN=$'\033[38;2;115;186;37m'
     C_RED=$'\033[38;2;238;0;0m'
 else
     C_RESET=""
     C_BOLD=""
-    C_GREEN_BG=""
+    C_YELLOW_BG=""
     C_WHITE=""
-    C_AMBER=""
+    C_GREEN=""
     C_RED=""
 fi
 
 # Themes whiptail via NEWT_COLORS.
 # newt n'accepte que les couleurs du terminal, pas le code hex :
-# fond vert, texte blanc, cadre rouge, titre/marque jaune, selection bleue.
-RPG_NEWT_NORMAL='root=white,green
-window=white,green
-border=red,green
-title=yellow,green
+# fond jaune, texte blanc, cadre rouge, titre/marque vert, selection bleue.
+RPG_NEWT_NORMAL='root=white,yellow
+window=white,yellow
+border=red,yellow
+title=green,yellow
 button=white,red
-actbutton=black,yellow
+actbutton=black,green
 compactbutton=white,red
 entry=black,white
-label=white,green
-listbox=white,green
-actlistbox=white,green
+label=white,yellow
+listbox=white,yellow
+actlistbox=white,yellow
 sellistbox=white,blue
 actsellistbox=white,blue
-textbox=white,green
+textbox=white,yellow
 acttextbox=white,blue
-helpline=white,green
-roottext=yellow,green
-disentry=gray,green'
+helpline=white,yellow
+roottext=green,yellow
+disentry=gray,yellow'
 
-RPG_NEWT_DANGER='root=white,green
-window=white,green
-border=red,green
+RPG_NEWT_DANGER='root=white,yellow
+window=white,yellow
+border=red,yellow
 title=white,red
 button=white,red
-actbutton=black,yellow
+actbutton=black,green
 compactbutton=white,red
 entry=black,white
-label=white,green
-listbox=white,green
-actlistbox=white,green
+label=white,yellow
+listbox=white,yellow
+actlistbox=white,yellow
 sellistbox=white,blue
 actsellistbox=white,blue
-textbox=white,green
-helpline=red,green
-roottext=yellow,green'
+textbox=white,yellow
+helpline=red,yellow
+roottext=green,yellow'
 
 RPG_NEWT_THEME="$RPG_NEWT_NORMAL"
 
@@ -334,7 +334,7 @@ ui_text() {
 # Couche d'affichage : menu texte simple (fallback)
 # Tout l'affichage part sur stderr pour que la valeur choisie reste sur stdout.
 
-# Barre de titre : fond vert, titre a gauche, "ResPinGuy" en jaune a droite.
+# Barre de titre : fond jaune, titre a gauche, "ResPinGuy" en vert a droite.
 rpg_basic_header() {
     local title="$1"
     local tcol="${2-$C_WHITE}"
@@ -343,7 +343,7 @@ rpg_basic_header() {
     pad=$((cols - ${#title} - ${#RPG_BACKTITLE} - 3))
     [ "$pad" -lt 1 ] && pad=1
     printf '%s%s %s%*s%s%s %s\n' \
-        "$C_BOLD" "$tcol" "$title" "$pad" "" "$C_AMBER" "$RPG_BACKTITLE" "$C_RESET"
+        "$C_BOLD" "$tcol" "$title" "$pad" "" "$C_GREEN" "$RPG_BACKTITLE" "$C_RESET"
 }
 
 # Cadre rouge : ligne de separation
@@ -371,15 +371,15 @@ basic_menu() {
     while :; do
         {
             clear
-            printf '%s%s' "$C_GREEN_BG" "$C_WHITE"
+            printf '%s%s' "$C_YELLOW_BG" "$C_WHITE"
             rpg_basic_header "$title"
             rpg_basic_rule
             printf '%s\n\n' "$prompt"
             for ((i = 0; i < ${#tags[@]}; i++)); do
-                printf '  %s%2d)%s %s\n' "$C_AMBER" "$((i + 1))" "$C_WHITE" "${labels[$i]}"
+                printf '  %s%2d)%s %s\n' "$C_GREEN" "$((i + 1))" "$C_WHITE" "${labels[$i]}"
             done
-            printf '\n   %sq)%s Quitter / Retour\n\n' "$C_AMBER" "$C_WHITE"
-            printf '%sVotre choix :%s ' "$C_AMBER" "$C_RESET"
+            printf '\n   %sq)%s Quitter / Retour\n\n' "$C_GREEN" "$C_WHITE"
+            printf '%sVotre choix :%s ' "$C_GREEN" "$C_RESET"
         } >&2
         read -r n || return 1
         case "$n" in
@@ -399,13 +399,13 @@ basic_input() {
     local v
     {
         clear
-        printf '%s%s' "$C_GREEN_BG" "$C_WHITE"
+        printf '%s%s' "$C_YELLOW_BG" "$C_WHITE"
         rpg_basic_header "$title"
         rpg_basic_rule
         printf '%s\n' "$prompt"
-        [ -n "$def" ] && printf '%sValeur actuelle :%s %s\n' "$C_AMBER" "$C_WHITE" "$def"
+        [ -n "$def" ] && printf '%sValeur actuelle :%s %s\n' "$C_GREEN" "$C_WHITE" "$def"
         printf '\n(Entree = garder la valeur actuelle, "-" = vider)\n'
-        printf '%s> %s' "$C_AMBER" "$C_RESET"
+        printf '%s> %s' "$C_GREEN" "$C_RESET"
     } >&2
     read -r v || return 1
     if [ -z "$v" ]; then
@@ -421,11 +421,11 @@ basic_yesno() {
     local text="$2"
     local kind="${3-}"
     local r tcol
-    tcol="$C_AMBER"
+    tcol="$C_GREEN"
     [ "$kind" = "danger" ] && tcol="$C_RED"
     {
         clear
-        printf '%s%s' "$C_GREEN_BG" "$C_WHITE"
+        printf '%s%s' "$C_YELLOW_BG" "$C_WHITE"
         rpg_basic_header "$title" "$tcol"
         rpg_basic_rule
         printf '%s\n\n' "$text"
@@ -443,15 +443,15 @@ basic_msg() {
     local text="$2"
     local kind="${3-}"
     local tcol
-    tcol="$C_AMBER"
+    tcol="$C_GREEN"
     [ "$kind" = "error" ] && tcol="$C_RED"
     {
         clear
-        printf '%s%s' "$C_GREEN_BG" "$C_WHITE"
+        printf '%s%s' "$C_YELLOW_BG" "$C_WHITE"
         rpg_basic_header "$title" "$tcol"
         rpg_basic_rule
         printf '%s\n\n' "$text"
-        printf '%sAppuyez sur Entree pour continuer...%s' "$C_AMBER" "$C_RESET"
+        printf '%sAppuyez sur Entree pour continuer...%s' "$C_GREEN" "$C_RESET"
     } >&2
     read -r _ || true
 }
@@ -461,11 +461,11 @@ basic_text() {
     local text="$2"
     {
         clear
-        printf '%s%s' "$C_GREEN_BG" "$C_WHITE"
-        rpg_basic_header "$title" "$C_AMBER"
+        printf '%s%s' "$C_YELLOW_BG" "$C_WHITE"
+        rpg_basic_header "$title" "$C_GREEN"
         rpg_basic_rule
         printf '%s\n\n' "$text"
-        printf '%sAppuyez sur Entree pour continuer...%s' "$C_AMBER" "$C_RESET"
+        printf '%sAppuyez sur Entree pour continuer...%s' "$C_GREEN" "$C_RESET"
     } >&2
     read -r _ || true
 }
