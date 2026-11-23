@@ -1,4 +1,4 @@
-# ResPinGuy - The Kompiler
+# ResPinGuy
 ## Créer une image ISO de son système Linux.
 ## Documentation Officiel
 
@@ -40,6 +40,7 @@ sudo respinguy --help
 
 L'interface utilise `whiptail` (ou `dialog`) lorsqu'il est disponible,
 sinon un menu texte simple. Aucune dépendance supplémentaire n'est obligatoire.
+L'affichage s'adapte automatiquement à la taille de la fenêtre.
 
 Les réglages choisis dans l'interface sont enregistrés dans
 `/usr/share/ResPinGuy-File-Config/respinguy-config.local`.

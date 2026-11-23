@@ -9,6 +9,12 @@ Les entrées les plus récentes sont en haut.
 ### Ajouté
 - Interface texte (TUI) lancée par `respinguy` : accueil, build, configuration,
   dépendances, mise à jour, suppression, aide.
+- Interface adaptative : la hauteur et la largeur des écrans sont recalculées
+  à chaque affichage, y compris après un redimensionnement du terminal.
+- Palette de l'interface : `#1d2f52`, `#73ba25`, `#ee0000`, `#ffb516`.
+  Thème whiptail (couleurs terminal approchantes) et équivalent ANSI truecolor
+  exact pour le menu texte.
+- Thème « danger » (rouge) pour les actions destructives et les erreurs.
 - Accès direct : `respinguy --build`, `--config`, `--deps`, `--help`.
 - Moteur d'affichage : `whiptail`, sinon `dialog`, sinon menu texte simple
   (aucune nouvelle dépendance obligatoire).
@@ -37,6 +43,10 @@ Les entrées les plus récentes sont en haut.
 - `respinguy-app-up` échouait si `/tmp/ResPinGuy` existait déjà.
 - Le dossier de sortie du build est maintenant validé : les dossiers système
   sont refusés, car le build exécute `rm -rf "$RPGHOME"`.
+
+### Supprimé
+- Mention « The Kompiler » retirée du README, de la documentation et de
+  l'interface (nom du projet : ResPinGuy).
 
 ### Sécurité
 - `update` et `remove` utilisent `exec` : le script courant ne continue pas à

@@ -1,4 +1,4 @@
-# ResPinGuy - The Kompiler
+# ResPinGuy
 ## Créer une image ISO de son système Linux.
 
 ⚠!!! ResPinGuy ne fonctionne pas encore !!!⚠

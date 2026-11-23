@@ -1,6 +1,6 @@
 #!/bin/bash
 #_____________________________________________________________________________________________
-# ResPinGuy - The Kompiler
+# ResPinGuy
 # Interface texte (TUI) : accueil, build, configuration, dependances,
 # mise a jour et suppression.
 #
@@ -15,11 +15,75 @@ RPG_FILE_DIR="/usr/share/ResPinGuy-File"
 RPG_CONF_DIR="/usr/share/ResPinGuy-File-Config"
 RPG_CONF="$RPG_CONF_DIR/respinguy-config"
 RPG_LOCAL="$RPG_CONF_DIR/respinguy-config.local"
-RPG_BACKTITLE="ResPinGuy - The Kompiler"
+RPG_BACKTITLE="ResPinGuy"
 
-UI_H=24
-UI_W=78
-UI_LIST=10
+# Palette officielle
+RPG_HEX_NAVY="#1d2f52"
+RPG_HEX_GREEN="#73ba25"
+RPG_HEX_RED="#ee0000"
+RPG_HEX_AMBER="#ffb516"
+
+# Tailles recalculees avant chaque ecran (voir rpg_ui_size)
+UI_H=21
+UI_W=76
+
+# Couleurs ANSI du menu texte (fallback)
+if [ -t 2 ] && [ -z "${NO_COLOR-}" ]; then
+    C_RESET=$'\033[0m'
+    C_BOLD=$'\033[1m'
+    C_NAVY_BG=$'\033[48;2;29;47;82m'
+    C_GREEN=$'\033[38;2;115;186;37m'
+    C_RED=$'\033[38;2;238;0;0m'
+    C_AMBER=$'\033[38;2;255;181;22m'
+else
+    C_RESET=""
+    C_BOLD=""
+    C_NAVY_BG=""
+    C_GREEN=""
+    C_RED=""
+    C_AMBER=""
+fi
+
+# Themes whiptail via NEWT_COLORS.
+# newt n'accepte que les couleurs du terminal, pas le code hex :
+# #1d2f52 -> blue, #73ba25 -> green, #ee0000 -> red, #ffb516 -> yellow.
+RPG_NEWT_NORMAL='root=white,blue
+window=white,blue
+border=green,blue
+title=black,yellow
+button=black,green
+actbutton=black,yellow
+compactbutton=black,green
+entry=black,white
+label=white,blue
+listbox=white,blue
+actlistbox=black,yellow
+sellistbox=black,yellow
+actsellistbox=black,yellow
+textbox=white,blue
+acttextbox=black,yellow
+helpline=green,blue
+roottext=green,blue
+disentry=gray,blue'
+
+RPG_NEWT_DANGER='root=white,blue
+window=white,blue
+border=red,blue
+title=white,red
+button=white,red
+actbutton=black,yellow
+compactbutton=white,red
+entry=black,white
+label=white,blue
+listbox=white,blue
+actlistbox=black,yellow
+sellistbox=black,yellow
+actsellistbox=black,yellow
+textbox=white,blue
+helpline=red,blue
+roottext=red,blue'
+
+RPG_NEWT_THEME="$RPG_NEWT_NORMAL"
 
 RPG_UI="basic"
 DEPS_STATE="?"
@@ -79,70 +143,164 @@ detect_ui() {
 }
 
 #_____________________________________________________________________________________________
+# Taille dynamique de la fenetre
+
+rpg_ui_size() {
+    local sz lines cols
+
+    lines=""
+    cols=""
+    sz=$(stty size 2>/dev/null)
+    if [ -n "$sz" ]; then
+        lines=${sz%% *}
+        cols=${sz##* }
+    fi
+
+    case "$lines" in
+        ''|*[!0-9]*) lines=$(tput lines 2>/dev/null) ;;
+    esac
+    case "$cols" in
+        ''|*[!0-9]*) cols=$(tput cols 2>/dev/null) ;;
+    esac
+    case "$lines" in
+        ''|*[!0-9]*) lines=24 ;;
+    esac
+    case "$cols" in
+        ''|*[!0-9]*) cols=80 ;;
+    esac
+
+    [ "$lines" -lt 15 ] && lines=15
+    [ "$cols" -lt 60 ] && cols=60
+
+    UI_H=$((lines - 3))
+    UI_W=$((cols - 4))
+    [ "$UI_W" -gt 140 ] && UI_W=140
+}
+
+# Hauteur adaptee au contenu (msgbox, yesno)
+rpg_ui_text_height() {
+    local n
+    n=$(printf '%s\n' "$1" | wc -l)
+    n=$((n + 6))
+    [ "$n" -lt 12 ] && n=12
+    [ "$n" -gt "$UI_H" ] && n=$UI_H
+    printf '%s' "$n"
+}
+
+#_____________________________________________________________________________________________
 # Couche d'affichage : whiptail / dialog
 
 ui_menu() {
     local title="$1"
     local prompt="$2"
+    local num listh h
     shift 2
+
     if [ "$RPG_UI" = "basic" ]; then
         basic_menu "$title" "$prompt" "$@"
         return
     fi
-    "$RPG_UI" --title "$title" --backtitle "$RPG_BACKTITLE" \
+
+    rpg_ui_size
+    num=$(( $# / 2 ))
+    listh=$num
+    h=$((num + 8))
+    [ "$h" -gt "$UI_H" ] && h=$UI_H
+    [ "$h" -lt 10 ] && h=10
+    [ "$listh" -gt $((h - 7)) ] && listh=$((h - 7))
+    [ "$listh" -lt 1 ] && listh=1
+
+    NEWT_COLORS="$RPG_NEWT_THEME" "$RPG_UI" \
+        --title "$title" --backtitle "$RPG_BACKTITLE" \
         --cancel-button "${UI_CANCEL:-Retour}" --ok-button "Valider" \
-        --menu "$prompt" "$UI_H" "$UI_W" "$UI_LIST" "$@" 3>&1 1>&2 2>&3
+        --menu "$prompt" "$h" "$UI_W" "$listh" "$@" 3>&1 1>&2 2>&3
 }
 
 ui_input() {
     local title="$1"
     local prompt="$2"
     local def="${3-}"
+    local h
+
     if [ "$RPG_UI" = "basic" ]; then
         basic_input "$title" "$prompt" "$def"
         return
     fi
-    "$RPG_UI" --title "$title" --backtitle "$RPG_BACKTITLE" \
+
+    rpg_ui_size
+    h=12
+    [ "$h" -gt "$UI_H" ] && h=$UI_H
+
+    NEWT_COLORS="$RPG_NEWT_THEME" "$RPG_UI" \
+        --title "$title" --backtitle "$RPG_BACKTITLE" \
         --cancel-button "Annuler" --ok-button "Valider" \
-        --inputbox "$prompt" 12 "$UI_W" "$def" 3>&1 1>&2 2>&3
+        --inputbox "$prompt" "$h" "$UI_W" "$def" 3>&1 1>&2 2>&3
 }
 
 ui_yesno() {
     local title="$1"
     local text="$2"
+    local kind="${3-}"
+    local theme h
+
     if [ "$RPG_UI" = "basic" ]; then
-        basic_yesno "$title" "$text"
+        basic_yesno "$title" "$text" "$kind"
         return
     fi
-    "$RPG_UI" --title "$title" --backtitle "$RPG_BACKTITLE" \
+
+    rpg_ui_size
+    h=$(rpg_ui_text_height "$text")
+    theme="$RPG_NEWT_THEME"
+    [ "$kind" = "danger" ] && theme="$RPG_NEWT_DANGER"
+
+    NEWT_COLORS="$theme" "$RPG_UI" \
+        --title "$title" --backtitle "$RPG_BACKTITLE" \
         --yes-button "Oui" --no-button "Non" \
-        --yesno "$text" 18 "$UI_W"
+        --yesno "$text" "$h" "$UI_W"
 }
 
 ui_msg() {
     local title="$1"
     local text="$2"
+    local kind="${3-}"
+    local theme h
+
     if [ "$RPG_UI" = "basic" ]; then
-        basic_msg "$title" "$text"
+        basic_msg "$title" "$text" "$kind"
         return
     fi
-    "$RPG_UI" --title "$title" --backtitle "$RPG_BACKTITLE" \
-        --ok-button "OK" --msgbox "$text" 18 "$UI_W"
+
+    rpg_ui_size
+    h=$(rpg_ui_text_height "$text")
+    theme="$RPG_NEWT_THEME"
+    [ "$kind" = "error" ] && theme="$RPG_NEWT_DANGER"
+
+    NEWT_COLORS="$theme" "$RPG_UI" \
+        --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --ok-button "OK" --msgbox "$text" "$h" "$UI_W"
+}
+
+ui_error() {
+    ui_msg "$1" "$2" "error"
 }
 
 ui_text() {
     local title="$1"
     local text="$2"
-    local tmp
+    local tmp rc
+
     if [ "$RPG_UI" = "basic" ]; then
         basic_text "$title" "$text"
         return
     fi
+
+    rpg_ui_size
     tmp=$(mktemp "${TMPDIR:-/tmp}/rpg-ui.XXXXXX") || return 1
     printf '%s\n' "$text" > "$tmp"
-    "$RPG_UI" --title "$title" --backtitle "$RPG_BACKTITLE" \
+    NEWT_COLORS="$RPG_NEWT_THEME" "$RPG_UI" \
+        --title "$title" --backtitle "$RPG_BACKTITLE" \
         --ok-button "Fermer" --textbox "$tmp" "$UI_H" "$UI_W"
-    local rc=$?
+    rc=$?
     rm -f "$tmp"
     return $rc
 }
@@ -166,14 +324,14 @@ basic_menu() {
     while :; do
         {
             clear
-            printf '=== %s ===\n' "$title"
+            printf '%s%s  %s  %s\n' "$C_BOLD" "$C_NAVY_BG$C_AMBER" "$title" "$C_RESET"
             printf '%s\n\n' "$prompt"
             for ((i = 0; i < ${#tags[@]}; i++)); do
-                printf '  %2d) %s\n' "$((i + 1))" "${labels[$i]}"
+                printf '  %s%2d)%s %s\n' "$C_GREEN" "$((i + 1))" "$C_RESET" "${labels[$i]}"
             done
-            printf '\n   q) Quitter / Retour\n\n'
+            printf '\n   %sq)%s Quitter / Retour\n\n' "$C_AMBER" "$C_RESET"
         } >&2
-        printf 'Votre choix : ' >&2
+        printf '%sVotre choix :%s ' "$C_AMBER" "$C_RESET" >&2
         read -r n || return 1
         case "$n" in
             q|Q) return 1 ;;
@@ -191,11 +349,11 @@ basic_input() {
     local def="${3-}"
     local v
     {
-        printf '=== %s ===\n' "$title"
+        printf '%s%s  %s  %s\n' "$C_BOLD" "$C_NAVY_BG$C_AMBER" "$title" "$C_RESET"
         printf '%s\n' "$prompt"
-        [ -n "$def" ] && printf 'Valeur actuelle : %s\n' "$def"
+        [ -n "$def" ] && printf '%sValeur actuelle :%s %s\n' "$C_GREEN" "$C_RESET" "$def"
         printf '\n(Entree = garder la valeur actuelle, "-" = vider)\n'
-        printf '> '
+        printf '%s> %s' "$C_AMBER" "$C_RESET"
     } >&2
     read -r v || return 1
     if [ -z "$v" ]; then
@@ -209,11 +367,14 @@ basic_input() {
 basic_yesno() {
     local title="$1"
     local text="$2"
-    local r
+    local kind="${3-}"
+    local r tcol
+    tcol="$C_AMBER"
+    [ "$kind" = "danger" ] && tcol="$C_RED"
     {
-        printf '=== %s ===\n' "$title"
+        printf '%s%s  %s  %s\n' "$C_BOLD" "$C_NAVY_BG$tcol" "$title" "$C_RESET"
         printf '%s\n\n' "$text"
-        printf '[o/N] '
+        printf '%s[o/N]%s ' "$C_GREEN" "$C_RESET"
     } >&2
     read -r r || return 1
     case "$r" in
@@ -225,8 +386,12 @@ basic_yesno() {
 basic_msg() {
     local title="$1"
     local text="$2"
+    local kind="${3-}"
+    local tcol
+    tcol="$C_AMBER"
+    [ "$kind" = "error" ] && tcol="$C_RED"
     {
-        printf '=== %s ===\n' "$title"
+        printf '%s%s  %s  %s\n' "$C_BOLD" "$C_NAVY_BG$tcol" "$title" "$C_RESET"
         printf '%s\n\n' "$text"
         printf 'Appuyez sur Entree pour continuer...'
     } >&2
@@ -237,7 +402,7 @@ basic_text() {
     local title="$1"
     local text="$2"
     {
-        printf '=== %s ===\n\n' "$title"
+        printf '%s%s  %s  %s\n\n' "$C_BOLD" "$C_NAVY_BG$C_AMBER" "$title" "$C_RESET"
         printf '%s\n\n' "$text"
         printf 'Appuyez sur Entree pour continuer...'
     } >&2
@@ -479,7 +644,7 @@ action_build() {
     rpg_load_effective
     rpg_deps_state
     if ! rpg_conf_ok; then
-        ui_msg "Build impossible" "La configuration est incomplete.
+        ui_error "Build impossible" "La configuration est incomplete.
 
 Verifiez le kernel et le nom de l'image dans Configuration.
 Vous pouvez aussi lancer : respinguy-app-dep"
@@ -516,7 +681,7 @@ Lancer la creation ?" || return
 
 $CFG_OUT/$CFG_NAME-$CFG_ARCH.iso"
     else
-        ui_msg "Build interrompu" "Le build s'est arrete avec le code $rc.
+        ui_error "Build interrompu" "Le build s'est arrete avec le code $rc.
 
 Consultez les messages affiches dans le terminal."
     fi
@@ -544,7 +709,7 @@ config_home() {
                 if [ -z "$CFG_HOME" ] || [ ! -d "$CFG_HOME" ]; then
                     v=$(ui_input "Home utilisateur" "Chemin du home a inclure (chemin absolu) :" "$CFG_HOME") || continue
                     if [ ! -d "$v" ]; then
-                        ui_msg "Home" "Dossier introuvable :
+                        ui_error "Home" "Dossier introuvable :
 
 $v"
                         continue
@@ -569,7 +734,7 @@ y compris pour le systeme installe depuis l'ISO."
                     continue
                 fi
                 if [ ! -d "$v" ]; then
-                    ui_msg "Home" "Dossier introuvable :
+                    ui_error "Home" "Dossier introuvable :
 
 $v"
                     continue
@@ -618,7 +783,7 @@ $CFG_KERNEL"
             path)
                 v=$(ui_input "Chemin du vmlinuz" "Chemin absolu du kernel :" "$CFG_VMLINUZ") || continue
                 if [ ! -f "$v" ]; then
-                    ui_msg "Kernel" "Fichier introuvable :
+                    ui_error "Kernel" "Fichier introuvable :
 
 $v"
                     continue
@@ -660,7 +825,7 @@ action_config() {
 Le kernel n'a probablement pas ete detecte.
 Lancez respinguy-app-dep puis verifiez le kernel.
 
-Ouvrir le fichier de configuration dans nano ?"; then
+Ouvrir le fichier de configuration dans nano ?" danger; then
                 clear
                 nano "$RPG_CONF"
             fi
@@ -680,7 +845,7 @@ Ouvrir le fichier de configuration dans nano ?"; then
             name)
                 v=$(ui_input "Nom de l'image" "Nom de base de l'ISO (sans extension) :" "$CFG_NAME") || continue
                 if ! rpg_check_name "$v"; then
-                    ui_msg "Nom invalide" "Le nom doit etre non vide et ne pas contenir de /."
+                    ui_error "Nom invalide" "Le nom doit etre non vide et ne pas contenir de /."
                     continue
                 fi
                 CFG_NAME="$v"
@@ -690,7 +855,7 @@ $CFG_NAME" ;;
             outdir)
                 v=$(ui_input "Dossier de sortie" "Dossier ou sera ecrite l'ISO (chemin absolu) :" "$CFG_OUT") || continue
                 if ! rpg_check_outdir "$v"; then
-                    ui_msg "Dossier invalide" "Ce dossier n'est pas autorise :
+                    ui_error "Dossier invalide" "Ce dossier n'est pas autorise :
 
 $v
 
@@ -714,7 +879,7 @@ $CFG_OUT" ;;
 Ne pas mettre de / devant.
 proc, sys, tmp, run et dev sont exclus automatiquement." "$CFG_ROOTDIR") || continue
                 if [ -z "$v" ]; then
-                    ui_msg "Dossiers" "La liste ne peut pas etre vide."
+                    ui_error "Dossiers" "La liste ne peut pas etre vide."
                     continue
                 fi
                 CFG_ROOTDIR="$v"
@@ -735,7 +900,7 @@ proc, sys, tmp, run et dev sont exclus automatiquement." "$CFG_ROOTDIR") || cont
             reset)
                 if ui_yesno "Reinitialiser" "Supprimer tous les reglages enregistres par l'interface ?
 
-Le fichier respinguy-config reprendra ses valeurs par defaut."; then
+Le fichier respinguy-config reprendra ses valeurs par defaut." danger; then
                     rpg_reset_local
                     ui_msg "Reinitialiser" "Reglages de l'interface supprimes."
                 fi ;;
@@ -768,7 +933,7 @@ Le gestionnaire de paquets detecte sera utilise
                 ui_msg "Dependances" "Installation terminee.
 Toutes les dependances sont presentes."
             else
-                ui_msg "Dependances" "Installation terminee, mais il reste des elements manquants.
+                ui_error "Dependances" "Installation terminee, mais il reste des elements manquants.
 
 Relancez la verification ou installez-les manuellement."
             fi
@@ -803,10 +968,10 @@ action_remove() {
 Les commandes, les fichiers et le dossier de build
 seront supprimes. Votre configuration sera perdue.
 
-Continuer ?" || return
+Continuer ?" danger || return
     ui_yesno "Confirmation" "Derniere confirmation.
 
-Supprimer definitivement ResPinGuy ?" || return
+Supprimer definitivement ResPinGuy ?" danger || return
 
     clear
     # exec : app-rm supprime /usr/share/ResPinGuy-File, y compris ce script.
@@ -817,7 +982,7 @@ Supprimer definitivement ResPinGuy ?" || return
 # Action : aide
 
 action_help() {
-    ui_text "Aide" "ResPinGuy - The Kompiler
+    ui_text "Aide" "ResPinGuy
 Creer une image ISO de son systeme Linux.
 
 INTERFACE
@@ -884,7 +1049,7 @@ main_menu() {
 detect_ui
 
 if [ ! -f "$RPG_CONF" ]; then
-    ui_msg "ResPinGuy" "Fichier de configuration absent :
+    ui_error "ResPinGuy" "Fichier de configuration absent :
 
 $RPG_CONF
 
