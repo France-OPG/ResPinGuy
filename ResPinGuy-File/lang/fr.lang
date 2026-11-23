@@ -1,0 +1,314 @@
+# ResPinGuy - Traductions : francais (langue de reference)
+# Toute cle absente d'une autre langue retombe sur ce fichier.
+
+# Boutons
+L_BTN_BACK="Retour"
+L_BTN_VALIDATE="Valider"
+L_BTN_CANCEL="Annuler"
+L_BTN_YES="Oui"
+L_BTN_NO="Non"
+L_BTN_OK="OK"
+L_BTN_CLOSE="Fermer"
+L_BTN_QUIT="Quitter"
+
+# Textes du menu texte
+L_PROMPT_CHOICE="Votre choix : "
+L_INPUT_CURRENT="Valeur actuelle :"
+L_INPUT_HINT="(Entrée = garder la valeur actuelle, \"-\" = vider)"
+L_PRESS_ENTER="Appuyez sur Entrée pour continuer..."
+
+# Menu principal
+L_MENU_HOME="Accueil"
+L_MENU_PROMPT="Que voulez-vous faire ?"
+L_MENU_BUILD="Créer l'image ISO"
+L_MENU_CONFIG="Configuration"
+L_MENU_DEPS="Vérifier les dépendances"
+L_MENU_UPDATE="Mettre à jour ResPinGuy"
+L_MENU_REMOVE="Supprimer ResPinGuy"
+L_MENU_LANG="Langue"
+L_MENU_HELP="Aide"
+L_MENU_QUIT="Quitter"
+
+# Etat
+L_ST_SYSTEM="Système"
+L_ST_KERNEL="Kernel"
+L_ST_DEPS="Dépend."
+L_ST_ISO="ISO"
+L_ST_OUTPUT="Sortie"
+L_ST_HOME="Home"
+L_ST_LANG="Langue"
+L_ST_UNKNOWN="inconnu"
+L_DEPS_OK="toutes installées"
+L_DEPS_KO="manquantes"
+L_DEPS_UNKNOWN="non vérifiées"
+L_HOME_ISO="inclus dans l'ISO (sans persistance)"
+L_HOME_PERS="inclus dans l'ISO + persistance"
+L_HOME_NONE="aucun"
+L_LANG_NAME="Français"
+
+# Configuration : resume
+L_CFG_NAME="Nom"
+L_CFG_OUT="Sortie"
+L_CFG_HOME="Home"
+L_CFG_KERNEL="Kernel"
+L_CFG_DIRS="Dossiers"
+L_CFG_PROMPT="Choisissez un réglage à modifier."
+L_CFG_KERNEL_FORCED="forcé : %s / %s"
+L_CFG_KERNEL_AUTO="automatique : %s"
+
+# Configuration : menu
+L_CFG_TITLE="Configuration"
+L_CFG_ITEM_NAME="Nom de l'image ISO"
+L_CFG_ITEM_OUT="Dossier de sortie"
+L_CFG_ITEM_HOME="Home utilisateur"
+L_CFG_ITEM_KERNEL="Kernel / vmlinuz"
+L_CFG_ITEM_ROOTDIR="Dossiers inclus dans l'ISO"
+L_CFG_ITEM_EDIT="Éditer les réglages (nano)"
+L_CFG_ITEM_RESET="Réinitialiser les réglages"
+
+# Nom de l'image
+L_NAME_TITLE="Nom de l'image"
+L_NAME_PROMPT="Nom de base de l'ISO (sans extension) :"
+L_NAME_INVALID_T="Nom invalide"
+L_NAME_INVALID_B="Le nom doit être non vide et ne pas contenir de /."
+L_NAME_SAVED="Nom enregistré :
+
+%s"
+
+# Dossier de sortie
+L_OUT_TITLE="Dossier de sortie"
+L_OUT_PROMPT="Dossier où sera écrite l'ISO (chemin absolu) :"
+L_OUT_INVALID_T="Dossier invalide"
+L_OUT_INVALID_B="Ce dossier n'est pas autorisé :
+
+%s
+
+Le build efface ce dossier avant de créer l'ISO.
+Choisissez un dossier dédié, par exemple :
+/home/ResPinGuy ou /tmp/ResPinGuy"
+L_OUT_SAVED="Dossier de sortie enregistré :
+
+%s"
+
+# Dossiers inclus
+L_ROOTDIR_TITLE="Dossiers inclus"
+L_ROOTDIR_PROMPT="Dossiers de / à inclure (séparés par des espaces) :
+
+Ne pas mettre de / devant.
+proc, sys, tmp, run et dev sont exclus automatiquement."
+L_ROOTDIR_EMPTY="La liste ne peut pas être vide."
+L_ROOTDIR_SAVED="Liste enregistrée."
+
+# Editeur
+L_EDIT_TITLE="Éditeur"
+L_EDIT_OK="Fichier enregistré et valide."
+L_EDIT_ERR_T="Erreur de syntaxe"
+
+# Reinitialisation
+L_RESET_TITLE="Réinitialiser"
+L_RESET_PROMPT="Supprimer tous les réglages enregistrés par l'interface ?
+
+Le fichier respinguy-config reprendra ses valeurs par défaut."
+L_RESET_DONE="Réglages de l'interface supprimés."
+
+# Configuration invalide
+L_LOAD_ERR_T="Configuration"
+L_LOAD_ERR_B="La configuration n'a pas pu être chargée.
+
+Le kernel n'a probablement pas été détecté.
+Lancez respinguy-app-dep puis vérifiez le kernel.
+
+Ouvrir le fichier de configuration dans nano ?"
+
+# Home utilisateur
+L_HOME_TITLE="Configuration - Home utilisateur"
+L_HOME_ITEM_NONE="Ne pas inclure de home"
+L_HOME_ITEM_ISO="Inclure le home dans l'ISO"
+L_HOME_ITEM_PERS="Inclure le home + persistance"
+L_HOME_ITEM_PATH="Modifier le chemin du home"
+L_HOME_PATH_PROMPT="Chemin du home à inclure (chemin absolu) :"
+L_HOME_NOT_FOUND_T="Home"
+L_HOME_NOT_FOUND_B="Dossier introuvable :
+
+%s"
+L_HOME_NONE_SAVED="Aucun home ne sera inclus."
+L_HOME_ISO_SAVED="Le home sera inclus dans l'ISO uniquement.
+
+Les fichiers sont copiés dans /etc/skel pendant le build,
+puis /etc/skel est restauré à la fin."
+L_HOME_PERS_SAVED="Le home sera inclus dans l'ISO avec persistance.
+
+Les fichiers sont copiés dans /etc/skel et y restent,
+y compris pour le système installé depuis l'ISO."
+L_HOME_PATH_SAVED="Chemin enregistré :
+
+%s"
+L_HOME_PATH_NOMODE="Chemin enregistré :
+
+%s
+
+Aucun home n'est inclus pour l'instant.
+Choisissez « Inclure le home dans l'ISO » ou
+« Inclure le home + persistance » pour l'activer."
+
+# Kernel
+L_KERNEL_TITLE="Configuration - Kernel"
+L_KERNEL_ITEM_VER="Version du kernel"
+L_KERNEL_ITEM_PATH="Chemin du vmlinuz"
+L_KERNEL_ITEM_AUTO="Détection automatique"
+L_KERNEL_VER_TITLE="Version du kernel"
+L_KERNEL_VER_PROMPT="Version utilisée par dracut (--kver) :"
+L_KERNEL_VER_EMPTY="Version vide : détection automatique conservée."
+L_KERNEL_VER_SAVED="Version enregistrée :
+
+%s"
+L_KERNEL_PATH_TITLE="Chemin du vmlinuz"
+L_KERNEL_PATH_PROMPT="Chemin absolu du kernel :"
+L_KERNEL_NOT_FOUND_T="Kernel"
+L_KERNEL_NOT_FOUND_B="Fichier introuvable :
+
+%s"
+L_KERNEL_SAVED="Kernel enregistré :
+
+%s
+Version : %s"
+L_KERNEL_AUTO_DONE="Détection automatique rétablie.
+
+Le kernel sera détecté à chaque build."
+
+# Build
+L_BUILD_TITLE="Créer l'image ISO"
+L_BUILD_ERR_T="Build impossible"
+L_BUILD_ERR_B="La configuration est incomplète.
+
+Vérifiez le kernel et le nom de l'image dans Configuration.
+Vous pouvez aussi lancer : respinguy-app-dep"
+L_BUILD_DEPS_T="Build"
+L_BUILD_DEPS_B="Des dépendances semblent manquantes.
+
+Il est conseillé de les vérifier avant de lancer le build.
+
+Continuer quand même ?"
+L_BUILD_SUMMARY_T="Créer l'image ISO"
+L_BUILD_SUMMARY_B="Résumé du build
+
+Nom de l'image   : %s
+Kernel           : %s
+Version kernel   : %s
+Architecture     : %s
+Dossiers         : %s
+Home utilisateur : %s
+
+ISO de sortie    : %s
+Dossier de build : /respinguy-build-dir/
+
+Lancer la création ?"
+L_BUILD_DONE_T="Build terminé"
+L_BUILD_DONE_B="Image ISO créée :
+
+%s"
+L_BUILD_FAIL_T="Build interrompu"
+L_BUILD_FAIL_B="Le build s'est arrêté avec le code %s.
+
+Consultez les messages affichés dans le terminal."
+
+# Dependances
+L_DEPS_TITLE="Dépendances"
+L_DEPS_MISSING_T="Dépendances manquantes"
+L_DEPS_MISSING_B="Certaines dépendances sont absentes.
+
+Lancer l'installation automatique ?
+
+Le gestionnaire de paquets détecté sera utilisé
+(apt, dnf, yum, pacman, zypper ou emerge)."
+L_DEPS_DONE="Installation terminée.
+Toutes les dépendances sont présentes."
+L_DEPS_PARTIAL="Installation terminée, mais il reste des éléments manquants.
+
+Relancez la vérification ou installez-les manuellement."
+
+# Mise a jour
+L_UPDATE_T="Mise à jour"
+L_UPDATE_B="ResPinGuy va être téléchargé depuis GitHub
+puis réinstaller ses commandes et ses fichiers.
+
+Votre configuration actuelle est conservée.
+
+Continuer ?"
+
+# Suppression
+L_REMOVE_T="Supprimer ResPinGuy"
+L_REMOVE_B="ResPinGuy va être retiré de ce système.
+
+Les commandes, les fichiers et le dossier de build
+seront supprimés. Votre configuration sera perdue.
+
+Continuer ?"
+L_REMOVE_C_T="Confirmation"
+L_REMOVE_C_B="Dernière confirmation.
+
+Supprimer définitivement ResPinGuy ?"
+
+# Compatibilite
+L_COMPAT_T="Configuration ancienne"
+L_COMPAT_B="Votre fichier respinguy-config ne prend pas encore
+en charge les réglages enregistrés par l'interface.
+
+Ajouter cette prise en charge maintenant ?
+
+Votre configuration actuelle est conservée, rien n'est écrasé."
+L_COMPAT_DONE="Prise en charge ajoutée.
+L'interface peut maintenant enregistrer vos réglages."
+L_COMPAT_SKIP="Sans cette modification, les réglages choisis
+dans l'interface ne seront pas appliqués au build."
+
+# Langue
+L_LANG_TITLE="Langue"
+L_LANG_PROMPT="Choisissez la langue de l'interface :"
+L_LANG_SAVED="Langue enregistrée."
+
+# Configuration absente
+L_CONF_MISSING_T="ResPinGuy"
+L_CONF_MISSING_B="Fichier de configuration absent :
+
+%s
+
+Réinstallez ResPinGuy."
+
+# Aide
+L_HELP_TITLE="Aide"
+L_HELP_BODY="ResPinGuy
+Créer une image ISO de son système Linux.
+
+INTERFACE
+  respinguy               Ce menu
+  respinguy --build       Build direct
+  respinguy --config      Configuration directe
+  respinguy --deps        Vérification des dépendances
+
+COMMANDES
+  respinguy-build         Créer l'image ISO
+  respinguy-config        Modifier la configuration
+  respinguy-app-dep       Vérifier les dépendances
+  respinguy-app-dep-force-install
+                          Installer les dépendances manquantes
+  respinguy-app-up        Mettre à jour ResPinGuy
+  respinguy-app-rm        Supprimer ResPinGuy
+
+FICHIERS
+  /usr/share/ResPinGuy-File-Config/respinguy-config
+                          Configuration par défaut
+  /usr/share/ResPinGuy-File-Config/respinguy-config.local
+                          Réglages enregistrés par l'interface
+
+DOCUMENTATION
+  https://github.com/France-OPG/ResPinGuy
+
+ENVIRONNEMENT
+  RPG_UI_ENGINE=basic     Force le menu texte (redimensionnement en direct)
+  RPG_FORCE_COLOR=1       Force les couleurs ANSI du menu texte
+  NO_COLOR=1              Désactive les couleurs
+
+ResPinGuy Officiel [r]"
+
+L_USAGE="Usage : respinguy [--build|--config|--deps|--lang|--help]"

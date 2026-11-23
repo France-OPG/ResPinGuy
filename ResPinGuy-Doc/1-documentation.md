@@ -48,6 +48,35 @@ Ce fichier est prioritaire sur `respinguy-config` et peut être supprimé
 pour revenir aux valeurs par défaut (menu Configuration > Réinitialiser).
 
 
+### Langues
+
+L'interface est disponible en cinq langues :
+
+- français (par défaut)
+- anglais
+- espagnol
+- allemand
+- portugais
+
+Changement de langue :
+
+```bash
+sudo respinguy --lang
+```
+
+ou menu principal > Langue.
+
+Le choix est mémorisé dans `/usr/share/ResPinGuy-File-Config/respinguy-config.local`
+(`RPG_LANG`). Surcharge ponctuelle :
+
+```bash
+sudo -E RPG_LANG=en respinguy
+```
+
+Les fichiers de traduction se trouvent dans `/usr/share/ResPinGuy-File/lang/`.
+Une clé absente d'une traduction retombe automatiquement sur le français.
+
+
 ### (Version sudo) Liste des commandes avec leurs fonction :
 
 Liste des commandes avec leurs fonction :

@@ -15,6 +15,8 @@ RPG_FILE_DIR="/usr/share/ResPinGuy-File"
 RPG_CONF_DIR="/usr/share/ResPinGuy-File-Config"
 RPG_CONF="$RPG_CONF_DIR/respinguy-config"
 RPG_LOCAL="$RPG_CONF_DIR/respinguy-config.local"
+RPG_LANG_DIR="$RPG_FILE_DIR/lang"
+RPG_LANG="${RPG_LANG-}"
 RPG_BACKTITLE="ResPinGuy"
 
 # Palette officielle
@@ -90,10 +92,10 @@ RPG_NEWT_THEME="$RPG_NEWT_NORMAL"
 RPG_UI="basic"
 DEPS_STATE="?"
 
-DISTRO_NAME="inconnue"
+DISTRO_NAME=""
 if [ -r /etc/os-release ]; then
     . /etc/os-release
-    DISTRO_NAME="${PRETTY_NAME:-${NAME:-inconnue}}"
+    DISTRO_NAME="${PRETTY_NAME:-${NAME:-}}"
 fi
 
 # Etat de la configuration (recharge a chaque passage dans les menus)
@@ -122,6 +124,33 @@ allow_only_root() {
     fi
 }
 allow_only_root
+
+#_____________________________________________________________________________________________
+# Langue de l'interface
+
+rpg_detect_lang() {
+    local l="${RPG_LANG-}"
+    if [ -z "$l" ] && [ -f "$RPG_LOCAL" ]; then
+        l=$(sed -n 's/^RPG_LANG=//p' "$RPG_LOCAL" 2>/dev/null | tail -n 1 | tr -d "\"'")
+    fi
+    case "$l" in
+        fr|en|es|de|pt) printf '%s' "$l" ;;
+        *) printf 'fr' ;;
+    esac
+}
+
+rpg_load_lang() {
+    local lang="${1:-fr}"
+    case "$lang" in
+        fr|en|es|de|pt) ;;
+        *) lang="fr" ;;
+    esac
+    RPG_LANG="$lang"
+    [ -f "$RPG_LANG_DIR/fr.lang" ] && . "$RPG_LANG_DIR/fr.lang"
+    if [ "$lang" != "fr" ] && [ -f "$RPG_LANG_DIR/$lang.lang" ]; then
+        . "$RPG_LANG_DIR/$lang.lang"
+    fi
+}
 
 #_____________________________________________________________________________________________
 # Detection du moteur d'interface
@@ -222,7 +251,7 @@ rpg_ui_text_height() {
 ui_menu() {
     local title="$1"
     local prompt="$2"
-    local num listh h
+    local num listh h cancel
     shift 2
 
     if [ "$RPG_UI" = "basic" ]; then
@@ -239,9 +268,12 @@ ui_menu() {
     [ "$listh" -gt $((h - 7)) ] && listh=$((h - 7))
     [ "$listh" -lt 1 ] && listh=1
 
+    cancel="$L_BTN_BACK"
+    [ "${UI_CANCEL_KEY-}" = "quit" ] && cancel="$L_BTN_QUIT"
+
     NEWT_COLORS="$RPG_NEWT_THEME" "$RPG_UI" \
         --title "$title" --backtitle "$RPG_BACKTITLE" \
-        --cancel-button "${UI_CANCEL:-Retour}" --ok-button "Valider" \
+        --cancel-button "$cancel" --ok-button "$L_BTN_VALIDATE" \
         --menu "$prompt" "$h" "$UI_W" "$listh" "$@" 3>&1 1>&2 2>&3
 }
 
@@ -262,7 +294,7 @@ ui_input() {
 
     NEWT_COLORS="$RPG_NEWT_THEME" "$RPG_UI" \
         --title "$title" --backtitle "$RPG_BACKTITLE" \
-        --cancel-button "Annuler" --ok-button "Valider" \
+        --cancel-button "$L_BTN_CANCEL" --ok-button "$L_BTN_VALIDATE" \
         --inputbox "$prompt" "$h" "$UI_W" "$def" 3>&1 1>&2 2>&3
 }
 
@@ -284,7 +316,7 @@ ui_yesno() {
 
     NEWT_COLORS="$theme" "$RPG_UI" \
         --title "$title" --backtitle "$RPG_BACKTITLE" \
-        --yes-button "Oui" --no-button "Non" \
+        --yes-button "$L_BTN_YES" --no-button "$L_BTN_NO" \
         --yesno "$text" "$h" "$UI_W"
 }
 
@@ -306,7 +338,7 @@ ui_msg() {
 
     NEWT_COLORS="$theme" "$RPG_UI" \
         --title "$title" --backtitle "$RPG_BACKTITLE" \
-        --ok-button "OK" --msgbox "$text" "$h" "$UI_W"
+        --ok-button "$L_BTN_OK" --msgbox "$text" "$h" "$UI_W"
 }
 
 ui_error() {
@@ -328,7 +360,7 @@ ui_text() {
     printf '%s\n' "$text" > "$tmp"
     NEWT_COLORS="$RPG_NEWT_THEME" "$RPG_UI" \
         --title "$title" --backtitle "$RPG_BACKTITLE" \
-        --ok-button "Fermer" --textbox "$tmp" "$UI_H" "$UI_W"
+        --ok-button "$L_BTN_CLOSE" --textbox "$tmp" "$UI_H" "$UI_W"
     rc=$?
     rm -f "$tmp"
     return $rc
@@ -362,12 +394,15 @@ basic_menu() {
     shift 2
     local -a tags=()
     local -a labels=()
-    local i n rc lastsize
+    local i n rc lastsize cancel
     while [ $# -ge 2 ]; do
         tags+=("$1")
         labels+=("$2")
         shift 2
     done
+
+    cancel="$L_BTN_BACK"
+    [ "${UI_CANCEL_KEY-}" = "quit" ] && cancel="$L_BTN_QUIT"
 
     lastsize=$(rpg_term_size_str)
 
@@ -381,8 +416,8 @@ basic_menu() {
             for ((i = 0; i < ${#tags[@]}; i++)); do
                 printf '  %s%2d)%s %s\n' "$C_YELLOW" "$((i + 1))" "$C_YELLOW" "${labels[$i]}"
             done
-            printf '\n   %sq)%s Quitter / Retour\n\n' "$C_YELLOW" "$C_YELLOW"
-            printf '%sVotre choix :%s ' "$C_YELLOW" "$C_RESET"
+            printf '\n   %sq)%s %s\n\n' "$C_YELLOW" "$C_YELLOW" "$cancel"
+            printf '%s%s%s ' "$C_YELLOW" "$L_PROMPT_CHOICE" "$C_RESET"
         } >&2
 
         # Attend une touche, mais redessine si la fenetre change de taille.
@@ -422,8 +457,8 @@ basic_input() {
         rpg_basic_header "$title"
         rpg_basic_rule
         printf '%s%s\n' "$C_YELLOW" "$prompt"
-        [ -n "$def" ] && printf '%sValeur actuelle :%s %s\n' "$C_YELLOW" "$C_YELLOW" "$def"
-        printf '%s\n(Entree = garder la valeur actuelle, "-" = vider)\n' "$C_YELLOW"
+        [ -n "$def" ] && printf '%s%s%s %s\n' "$C_YELLOW" "$L_INPUT_CURRENT" "$C_YELLOW" "$def"
+        printf '%s\n%s\n' "$C_YELLOW" "$L_INPUT_HINT"
         printf '%s> %s' "$C_YELLOW" "$C_RESET"
     } >&2
     read -r v || return 1
@@ -452,7 +487,7 @@ basic_yesno() {
     } >&2
     read -r r || return 1
     case "$r" in
-        o|O|y|Y|oui|Oui|OUI|yes|Yes|YES) return 0 ;;
+        o|O|y|Y|s|S|oui|Oui|OUI|yes|Yes|YES|si|Si|SI|sí|Sí|sim|Sim) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -470,7 +505,7 @@ basic_msg() {
         rpg_basic_header "$title" "$tcol"
         rpg_basic_rule
         printf '%s%s\n\n' "$C_YELLOW" "$text"
-        printf '%sAppuyez sur Entree pour continuer...%s' "$C_YELLOW" "$C_RESET"
+        printf '%s%s%s' "$C_YELLOW" "$L_PRESS_ENTER" "$C_RESET"
     } >&2
     read -r _ || true
 }
@@ -484,7 +519,7 @@ basic_text() {
         rpg_basic_header "$title" "$C_YELLOW"
         rpg_basic_rule
         printf '%s%s\n\n' "$C_YELLOW" "$text"
-        printf '%sAppuyez sur Entree pour continuer...%s' "$C_YELLOW" "$C_RESET"
+        printf '%s%s%s' "$C_YELLOW" "$L_PRESS_ENTER" "$C_RESET"
     } >&2
     read -r _ || true
 }
@@ -563,6 +598,7 @@ rpg_save_local() {
         echo
         [ -n "$CFG_NAME" ] && echo "RPGBUILDNAME=$(rpg_shq "$CFG_NAME")"
         [ -n "$CFG_OUT" ] && echo "RPGHOME=$(rpg_shq "$CFG_OUT")"
+        echo "RPG_LANG=$(rpg_shq "$RPG_LANG")"
         case "$CFG_MODE" in
             iso) echo "RPGCONFIGUSER=1" ;;
             pers) echo "RPGCONFIGUSERPERS=1" ;;
@@ -593,6 +629,18 @@ rpg_save_local() {
 
 rpg_reset_local() {
     rm -f "$RPG_LOCAL"
+}
+
+# Met a jour uniquement la langue, sans toucher aux autres reglages
+rpg_set_lang_local() {
+    local tmp="$RPG_LOCAL.tmp"
+    if [ -f "$RPG_LOCAL" ]; then
+        grep -v '^RPG_LANG=' "$RPG_LOCAL" > "$tmp" 2>/dev/null
+    else
+        : > "$tmp"
+    fi
+    printf "RPG_LANG=%s\n" "$(rpg_shq "$RPG_LANG")" >> "$tmp"
+    mv -f "$tmp" "$RPG_LOCAL"
 }
 
 #_____________________________________________________________________________________________
@@ -639,18 +687,22 @@ rpg_derive_kver() {
 
 rpg_mode_label() {
     case "$CFG_MODE" in
-        iso)  printf '%s' "inclus dans l'ISO (sans persistance)" ;;
-        pers) printf '%s' "inclus dans l'ISO + persistance" ;;
-        *)    printf '%s' "aucun" ;;
+        iso)  printf '%s' "$L_HOME_ISO" ;;
+        pers) printf '%s' "$L_HOME_PERS" ;;
+        *)    printf '%s' "$L_HOME_NONE" ;;
     esac
 }
 
 rpg_deps_label() {
     case "$DEPS_STATE" in
-        OK) printf '%s' "toutes installees" ;;
-        KO) printf '%s' "manquantes" ;;
-        *)  printf '%s' "non verifiees" ;;
+        OK) printf '%s' "$L_DEPS_OK" ;;
+        KO) printf '%s' "$L_DEPS_KO" ;;
+        *)  printf '%s' "$L_DEPS_UNKNOWN" ;;
     esac
+}
+
+rpg_kv() {
+    printf '%-9s: %s\n' "$1" "$2"
 }
 
 #_____________________________________________________________________________________________
@@ -660,21 +712,14 @@ rpg_ensure_compat() {
     [ -f "$RPG_CONF" ] || return 0
     grep -q 'respinguy-config.local' "$RPG_CONF" 2>/dev/null && return 0
 
-    if ui_yesno "Configuration ancienne" "Votre fichier respinguy-config ne prend pas encore
-en charge les reglages enregistres par l'interface.
-
-Ajouter cette prise en charge maintenant ?
-
-Votre configuration actuelle est conservee, rien n'est ecrase."; then
+    if ui_yesno "$L_COMPAT_T" "$L_COMPAT_B"; then
         {
             printf '\n# --- Reglages enregistres par l interface ResPinGuy ---\n'
             printf '[ -f "%s" ] && . "%s"\n' "$RPG_LOCAL" "$RPG_LOCAL"
         } >> "$RPG_CONF"
-        ui_msg "Configuration" "Prise en charge ajoutee.
-L'interface peut maintenant enregistrer vos reglages."
+        ui_msg "$L_CFG_TITLE" "$L_COMPAT_DONE"
     else
-        ui_msg "Configuration" "Sans cette modification, les reglages choisis
-dans l'interface ne seront pas appliques au build."
+        ui_msg "$L_CFG_TITLE" "$L_COMPAT_SKIP"
     fi
 }
 
@@ -682,28 +727,31 @@ dans l'interface ne seront pas appliques au build."
 # Etat affiche dans les menus
 
 rpg_status_main() {
-    printf 'Systeme : %s\n' "${DISTRO_NAME:0:60}"
-    printf 'Kernel  : %s (%s)\n' "${CFG_KERNEL:-inconnu}" "${CFG_ARCH:-?}"
-    printf 'Depend. : %s\n' "$(rpg_deps_label)"
-    printf 'ISO     : %s\n' "${CFG_NAME:-?}"
-    printf 'Sortie  : %s\n' "${CFG_OUT:-?}"
-    printf 'Home    : %s\n' "$(rpg_mode_label)"
-    printf '\nQue voulez-vous faire ?'
+    local d
+    d="${DISTRO_NAME:-$L_ST_UNKNOWN}"
+    rpg_kv "$L_ST_SYSTEM" "${d:0:60}"
+    rpg_kv "$L_ST_KERNEL" "$(printf '%s (%s)' "${CFG_KERNEL:-$L_ST_UNKNOWN}" "${CFG_ARCH:-?}")"
+    rpg_kv "$L_ST_DEPS" "$(rpg_deps_label)"
+    rpg_kv "$L_ST_ISO" "${CFG_NAME:-?}"
+    rpg_kv "$L_ST_OUTPUT" "${CFG_OUT:-?}"
+    rpg_kv "$L_ST_HOME" "$(rpg_mode_label)"
+    rpg_kv "$L_ST_LANG" "$L_LANG_NAME"
+    printf '\n%s' "$L_MENU_PROMPT"
 }
 
 rpg_status_config() {
     local k
     if [ "$CFG_KVER_FORCED" -eq 1 ] || [ "$CFG_KVML_FORCED" -eq 1 ]; then
-        k="force : ${CFG_KERNEL:-?} / ${CFG_VMLINUZ:-?}"
+        k=$(printf "$L_CFG_KERNEL_FORCED" "${CFG_KERNEL:-?}" "${CFG_VMLINUZ:-?}")
     else
-        k="automatique : ${CFG_KERNEL:-?}"
+        k=$(printf "$L_CFG_KERNEL_AUTO" "${CFG_KERNEL:-?}")
     fi
-    printf 'Nom    : %s\n' "${CFG_NAME:-?}"
-    printf 'Sortie : %s\n' "${CFG_OUT:-?}"
-    printf 'Home   : %s\n' "$(rpg_mode_label)"
-    printf 'Kernel : %s\n' "$k"
-    printf 'Dossiers : %s\n' "${CFG_ROOTDIR:-?}"
-    printf '\nChoisissez un reglage a modifier.'
+    rpg_kv "$L_CFG_NAME" "${CFG_NAME:-?}"
+    rpg_kv "$L_CFG_OUT" "${CFG_OUT:-?}"
+    rpg_kv "$L_CFG_HOME" "$(rpg_mode_label)"
+    rpg_kv "$L_CFG_KERNEL" "$k"
+    rpg_kv "$L_CFG_DIRS" "${CFG_ROOTDIR:-?}"
+    printf '\n%s' "$L_CFG_PROMPT"
 }
 
 #_____________________________________________________________________________________________
@@ -721,49 +769,31 @@ rpg_deps_state() {
 # Action : creer l'image ISO
 
 action_build() {
+    local summary rc
     rpg_load_effective
     rpg_deps_state
     if ! rpg_conf_ok; then
-        ui_error "Build impossible" "La configuration est incomplete.
-
-Verifiez le kernel et le nom de l'image dans Configuration.
-Vous pouvez aussi lancer : respinguy-app-dep"
+        ui_error "$L_BUILD_ERR_T" "$L_BUILD_ERR_B"
         return
     fi
 
     if [ "$DEPS_STATE" != "OK" ]; then
-        ui_yesno "Build" "Des dependances semblent manquantes.
-
-Il est conseille de les verifier avant de lancer le build.
-
-Continuer quand meme ?" || return
+        ui_yesno "$L_BUILD_DEPS_T" "$L_BUILD_DEPS_B" || return
     fi
 
-    ui_yesno "Creer l'image ISO" "Resume du build
+    summary=$(printf "$L_BUILD_SUMMARY_B" \
+        "$CFG_NAME" "$CFG_VMLINUZ" "$CFG_KERNEL" "$CFG_ARCH" "$CFG_ROOTDIR" \
+        "$(rpg_mode_label)" "$CFG_OUT/$CFG_NAME-$CFG_ARCH.iso")
 
-Nom de l'image  : $CFG_NAME
-Kernel          : $CFG_VMLINUZ
-Version kernel  : $CFG_KERNEL
-Architecture    : $CFG_ARCH
-Dossiers        : $CFG_ROOTDIR
-Home utilisateur: $(rpg_mode_label)
-
-ISO de sortie   : $CFG_OUT/$CFG_NAME-$CFG_ARCH.iso
-Dossier de build: /respinguy-build-dir/
-
-Lancer la creation ?" || return
+    ui_yesno "$L_BUILD_SUMMARY_T" "$summary" || return
 
     clear
     bash "$RPG_FILE_DIR/respinguy-build"
-    local rc=$?
+    rc=$?
     if [ $rc -eq 0 ]; then
-        ui_msg "Build termine" "Image ISO creee :
-
-$CFG_OUT/$CFG_NAME-$CFG_ARCH.iso"
+        ui_msg "$L_BUILD_DONE_T" "$(printf "$L_BUILD_DONE_B" "$CFG_OUT/$CFG_NAME-$CFG_ARCH.iso")"
     else
-        ui_error "Build interrompu" "Le build s'est arrete avec le code $rc.
-
-Consultez les messages affiches dans le terminal."
+        ui_error "$L_BUILD_FAIL_T" "$(printf "$L_BUILD_FAIL_B" "$rc")"
     fi
 }
 
@@ -774,64 +804,46 @@ config_home() {
     local choice v
     while :; do
         rpg_load_effective
-        choice=$(ui_menu "Configuration - Home utilisateur" "$(rpg_status_config)" \
-            none "Ne pas inclure de home" \
-            iso  "Inclure le home dans l'ISO" \
-            pers "Inclure le home + persistance" \
-            path "Modifier le chemin du home" \
-            back "Retour") || return
+        choice=$(ui_menu "$L_HOME_TITLE" "$(rpg_status_config)" \
+            none "$L_HOME_ITEM_NONE" \
+            iso  "$L_HOME_ITEM_ISO" \
+            pers "$L_HOME_ITEM_PERS" \
+            path "$L_HOME_ITEM_PATH" \
+            back "$L_BTN_BACK") || return
         case "$choice" in
             none)
                 CFG_MODE="none"
                 CFG_HOME=""
-                rpg_save_local && ui_msg "Home" "Aucun home ne sera inclus." ;;
+                rpg_save_local && ui_msg "$L_CFG_ITEM_HOME" "$L_HOME_NONE_SAVED" ;;
             iso|pers)
                 if [ -z "$CFG_HOME" ] || [ ! -d "$CFG_HOME" ]; then
-                    v=$(ui_input "Home utilisateur" "Chemin du home a inclure (chemin absolu) :" "$CFG_HOME") || continue
+                    v=$(ui_input "$L_HOME_TITLE" "$L_HOME_PATH_PROMPT" "$CFG_HOME") || continue
                     if [ ! -d "$v" ]; then
-                        ui_error "Home" "Dossier introuvable :
-
-$v"
+                        ui_error "$L_HOME_NOT_FOUND_T" "$(printf "$L_HOME_NOT_FOUND_B" "$v")"
                         continue
                     fi
                     CFG_HOME="$v"
                 fi
                 CFG_MODE="$choice"
                 if [ "$choice" = "iso" ]; then
-                    rpg_save_local && ui_msg "Home" "Le home sera inclus dans l'ISO uniquement.
-
-Les fichiers sont copies dans /etc/skel pendant le build,
-puis /etc/skel est restaure a la fin."
+                    rpg_save_local && ui_msg "$L_CFG_ITEM_HOME" "$L_HOME_ISO_SAVED"
                 else
-                    rpg_save_local && ui_msg "Home" "Le home sera inclus dans l'ISO avec persistance.
-
-Les fichiers sont copies dans /etc/skel et y restent,
-y compris pour le systeme installe depuis l'ISO."
+                    rpg_save_local && ui_msg "$L_CFG_ITEM_HOME" "$L_HOME_PERS_SAVED"
                 fi ;;
             path)
-                v=$(ui_input "Home utilisateur" "Chemin du home a inclure (chemin absolu) :" "$CFG_HOME") || continue
+                v=$(ui_input "$L_HOME_TITLE" "$L_HOME_PATH_PROMPT" "$CFG_HOME") || continue
                 if [ -z "$v" ]; then
                     continue
                 fi
                 if [ ! -d "$v" ]; then
-                    ui_error "Home" "Dossier introuvable :
-
-$v"
+                    ui_error "$L_HOME_NOT_FOUND_T" "$(printf "$L_HOME_NOT_FOUND_B" "$v")"
                     continue
                 fi
                 CFG_HOME="$v"
                 if [ "$CFG_MODE" = "none" ]; then
-                    rpg_save_local && ui_msg "Home" "Chemin enregistre :
-
-$CFG_HOME
-
-Aucun home n'est inclus pour l'instant.
-Choisissez \"Inclure le home dans l'ISO\" ou
-\"Inclure le home + persistance\" pour l'activer."
+                    rpg_save_local && ui_msg "$L_CFG_ITEM_HOME" "$(printf "$L_HOME_PATH_NOMODE" "$CFG_HOME")"
                 else
-                    rpg_save_local && ui_msg "Home" "Chemin enregistre :
-
-$CFG_HOME"
+                    rpg_save_local && ui_msg "$L_CFG_ITEM_HOME" "$(printf "$L_HOME_PATH_SAVED" "$CFG_HOME")"
                 fi ;;
             *) return ;;
         esac
@@ -842,30 +854,26 @@ config_kernel() {
     local choice v d
     while :; do
         rpg_load_effective
-        choice=$(ui_menu "Configuration - Kernel" "$(rpg_status_config)" \
-            ver  "Version du kernel" \
-            path "Chemin du vmlinuz" \
-            auto "Detection automatique" \
-            back "Retour") || return
+        choice=$(ui_menu "$L_KERNEL_TITLE" "$(rpg_status_config)" \
+            ver  "$L_KERNEL_ITEM_VER" \
+            path "$L_KERNEL_ITEM_PATH" \
+            auto "$L_KERNEL_ITEM_AUTO" \
+            back "$L_BTN_BACK") || return
         case "$choice" in
             ver)
-                v=$(ui_input "Version du kernel" "Version utilisee par dracut (--kver) :" "$CFG_KERNEL") || continue
+                v=$(ui_input "$L_KERNEL_VER_TITLE" "$L_KERNEL_VER_PROMPT" "$CFG_KERNEL") || continue
                 CFG_KERNEL="$v"
                 if [ -z "$v" ]; then
                     CFG_KVER_FORCED=0
-                    rpg_save_local && ui_msg "Kernel" "Version vide : detection automatique conservee."
+                    rpg_save_local && ui_msg "$L_CFG_ITEM_KERNEL" "$L_KERNEL_VER_EMPTY"
                 else
                     CFG_KVER_FORCED=1
-                    rpg_save_local && ui_msg "Kernel" "Version enregistree :
-
-$CFG_KERNEL"
+                    rpg_save_local && ui_msg "$L_CFG_ITEM_KERNEL" "$(printf "$L_KERNEL_VER_SAVED" "$CFG_KERNEL")"
                 fi ;;
             path)
-                v=$(ui_input "Chemin du vmlinuz" "Chemin absolu du kernel :" "$CFG_VMLINUZ") || continue
+                v=$(ui_input "$L_KERNEL_PATH_TITLE" "$L_KERNEL_PATH_PROMPT" "$CFG_VMLINUZ") || continue
                 if [ ! -f "$v" ]; then
-                    ui_error "Kernel" "Fichier introuvable :
-
-$v"
+                    ui_error "$L_KERNEL_NOT_FOUND_T" "$(printf "$L_KERNEL_NOT_FOUND_B" "$v")"
                     continue
                 fi
                 CFG_VMLINUZ="$v"
@@ -877,18 +885,13 @@ $v"
                         CFG_KVER_FORCED=1
                     fi
                 fi
-                rpg_save_local && ui_msg "Kernel" "Kernel enregistre :
-
-$CFG_VMLINUZ
-Version : ${CFG_KERNEL:-?}" ;;
+                rpg_save_local && ui_msg "$L_CFG_ITEM_KERNEL" "$(printf "$L_KERNEL_SAVED" "$CFG_VMLINUZ" "${CFG_KERNEL:-?}")" ;;
             auto)
                 CFG_KERNEL=""
                 CFG_VMLINUZ=""
                 CFG_KVER_FORCED=0
                 CFG_KVML_FORCED=0
-                rpg_save_local && ui_msg "Kernel" "Detection automatique retablie.
-
-Le kernel sera detecte a chaque build." ;;
+                rpg_save_local && ui_msg "$L_CFG_ITEM_KERNEL" "$L_KERNEL_AUTO_DONE" ;;
             *) return ;;
         esac
     done
@@ -896,75 +899,57 @@ Le kernel sera detecte a chaque build." ;;
 
 action_config() {
     local choice v
-    UI_CANCEL="Retour"
+    UI_CANCEL_KEY="back"
     while :; do
         rpg_load_effective
         if ! rpg_conf_ok; then
-            if ui_yesno "Configuration" "La configuration n'a pas pu etre chargee.
-
-Le kernel n'a probablement pas ete detecte.
-Lancez respinguy-app-dep puis verifiez le kernel.
-
-Ouvrir le fichier de configuration dans nano ?" danger; then
+            if ui_yesno "$L_LOAD_ERR_T" "$L_LOAD_ERR_B" danger; then
                 clear
                 nano "$RPG_CONF"
             fi
             return
         fi
-        choice=$(ui_menu "Configuration" "$(rpg_status_config)" \
-            name    "Nom de l'image ISO" \
-            outdir  "Dossier de sortie" \
-            home    "Home utilisateur" \
-            kernel  "Kernel / vmlinuz" \
-            rootdir "Dossiers inclus dans l'ISO" \
-            edit    "Editer les reglages (nano)" \
-            reset   "Reinitialiser les reglages" \
-            back    "Retour") || return
+        choice=$(ui_menu "$L_CFG_TITLE" "$(rpg_status_config)" \
+            name    "$L_CFG_ITEM_NAME" \
+            outdir  "$L_CFG_ITEM_OUT" \
+            home    "$L_CFG_ITEM_HOME" \
+            kernel  "$L_CFG_ITEM_KERNEL" \
+            rootdir "$L_CFG_ITEM_ROOTDIR" \
+            edit    "$L_CFG_ITEM_EDIT" \
+            reset   "$L_CFG_ITEM_RESET" \
+            back    "$L_BTN_BACK") || return
 
         case "$choice" in
             name)
-                v=$(ui_input "Nom de l'image" "Nom de base de l'ISO (sans extension) :" "$CFG_NAME") || continue
+                v=$(ui_input "$L_NAME_TITLE" "$L_NAME_PROMPT" "$CFG_NAME") || continue
                 if ! rpg_check_name "$v"; then
-                    ui_error "Nom invalide" "Le nom doit etre non vide et ne pas contenir de /."
+                    ui_error "$L_NAME_INVALID_T" "$L_NAME_INVALID_B"
                     continue
                 fi
                 CFG_NAME="$v"
-                rpg_save_local && ui_msg "Nom" "Nom enregistre :
-
-$CFG_NAME" ;;
+                rpg_save_local && ui_msg "$L_NAME_TITLE" "$(printf "$L_NAME_SAVED" "$CFG_NAME")" ;;
             outdir)
-                v=$(ui_input "Dossier de sortie" "Dossier ou sera ecrite l'ISO (chemin absolu) :" "$CFG_OUT") || continue
+                v=$(ui_input "$L_OUT_TITLE" "$L_OUT_PROMPT" "$CFG_OUT") || continue
                 if ! rpg_check_outdir "$v"; then
-                    ui_error "Dossier invalide" "Ce dossier n'est pas autorise :
-
-$v
-
-Le build efface ce dossier avant de creer l'ISO.
-Choisissez un dossier dedie, par exemple :
-/home/ResPinGuy ou /tmp/ResPinGuy"
+                    ui_error "$L_OUT_INVALID_T" "$(printf "$L_OUT_INVALID_B" "$v")"
                     continue
                 fi
                 mkdir -p "$v" 2>/dev/null
                 CFG_OUT="$v"
-                rpg_save_local && ui_msg "Dossier" "Dossier de sortie enregistre :
-
-$CFG_OUT" ;;
+                rpg_save_local && ui_msg "$L_OUT_TITLE" "$(printf "$L_OUT_SAVED" "$CFG_OUT")" ;;
             home)
                 config_home ;;
             kernel)
                 config_kernel ;;
             rootdir)
-                v=$(ui_input "Dossiers inclus" "Dossiers de / a inclure (separes par des espaces) :
-
-Ne pas mettre de / devant.
-proc, sys, tmp, run et dev sont exclus automatiquement." "$CFG_ROOTDIR") || continue
+                v=$(ui_input "$L_ROOTDIR_TITLE" "$L_ROOTDIR_PROMPT" "$CFG_ROOTDIR") || continue
                 if [ -z "$v" ]; then
-                    ui_error "Dossiers" "La liste ne peut pas etre vide."
+                    ui_error "$L_ROOTDIR_TITLE" "$L_ROOTDIR_EMPTY"
                     continue
                 fi
                 CFG_ROOTDIR="$v"
                 CFG_ROOTDIR_SET=1
-                rpg_save_local && ui_msg "Dossiers" "Liste enregistree." ;;
+                rpg_save_local && ui_msg "$L_ROOTDIR_TITLE" "$L_ROOTDIR_SAVED" ;;
             edit)
                 if [ ! -f "$RPG_LOCAL" ]; then
                     rpg_save_local
@@ -972,17 +957,15 @@ proc, sys, tmp, run et dev sont exclus automatiquement." "$CFG_ROOTDIR") || cont
                 clear
                 nano "$RPG_LOCAL"
                 if bash -n "$RPG_LOCAL" 2>/tmp/rpg-local-err; then
-                    ui_msg "Editeur" "Fichier enregistre et valide."
+                    ui_msg "$L_EDIT_TITLE" "$L_EDIT_OK"
                 else
-                    ui_text "Erreur de syntaxe" "$(cat /tmp/rpg-local-err)"
+                    ui_text "$L_EDIT_ERR_T" "$(cat /tmp/rpg-local-err)"
                 fi
                 rm -f /tmp/rpg-local-err ;;
             reset)
-                if ui_yesno "Reinitialiser" "Supprimer tous les reglages enregistres par l'interface ?
-
-Le fichier respinguy-config reprendra ses valeurs par defaut." danger; then
+                if ui_yesno "$L_RESET_TITLE" "$L_RESET_PROMPT" danger; then
                     rpg_reset_local
-                    ui_msg "Reinitialiser" "Reglages de l'interface supprimes."
+                    ui_msg "$L_RESET_TITLE" "$L_RESET_DONE"
                 fi ;;
             *) return ;;
         esac
@@ -993,29 +976,21 @@ Le fichier respinguy-config reprendra ses valeurs par defaut." danger; then
 # Action : dependances
 
 action_deps() {
-    local out rc
+    local out rc rc2
     out=$(bash "$RPG_FILE_DIR/respinguy-app-dep" 2>&1)
     rc=$?
-    ui_text "Dependances" "$out"
+    ui_text "$L_DEPS_TITLE" "$out"
 
     if [ $rc -ne 0 ]; then
-        if ui_yesno "Dependances manquantes" "Certaines dependances sont absentes.
-
-Lancer l'installation automatique ?
-
-Le gestionnaire de paquets detecte sera utilise
-(apt, dnf, yum, pacman, zypper ou emerge)."; then
+        if ui_yesno "$L_DEPS_MISSING_T" "$L_DEPS_MISSING_B"; then
             clear
             bash "$RPG_FILE_DIR/respinguy-app-dep-force-install"
-            local rc2=$?
+            rc2=$?
             rpg_deps_state
             if [ $rc2 -eq 0 ] && [ "$DEPS_STATE" = "OK" ]; then
-                ui_msg "Dependances" "Installation terminee.
-Toutes les dependances sont presentes."
+                ui_msg "$L_DEPS_TITLE" "$L_DEPS_DONE"
             else
-                ui_error "Dependances" "Installation terminee, mais il reste des elements manquants.
-
-Relancez la verification ou installez-les manuellement."
+                ui_error "$L_DEPS_TITLE" "$L_DEPS_PARTIAL"
             fi
         fi
     fi
@@ -1026,12 +1001,7 @@ Relancez la verification ou installez-les manuellement."
 # Action : mise a jour
 
 action_update() {
-    ui_yesno "Mise a jour" "ResPinGuy va etre telecharge depuis GitHub
-puis reinstaller ses commandes et ses fichiers.
-
-Votre configuration actuelle est conservee.
-
-Continuer ?" || return
+    ui_yesno "$L_UPDATE_T" "$L_UPDATE_B" || return
 
     clear
     # exec : les fichiers de /usr/share/ResPinGuy-File sont remplaces pendant
@@ -1043,15 +1013,8 @@ Continuer ?" || return
 # Action : suppression
 
 action_remove() {
-    ui_yesno "Supprimer ResPinGuy" "ResPinGuy va etre retire de ce systeme.
-
-Les commandes, les fichiers et le dossier de build
-seront supprimes. Votre configuration sera perdue.
-
-Continuer ?" danger || return
-    ui_yesno "Confirmation" "Derniere confirmation.
-
-Supprimer definitivement ResPinGuy ?" danger || return
+    ui_yesno "$L_REMOVE_T" "$L_REMOVE_B" danger || return
+    ui_yesno "$L_REMOVE_C_T" "$L_REMOVE_C_B" danger || return
 
     clear
     # exec : app-rm supprime /usr/share/ResPinGuy-File, y compris ce script.
@@ -1062,39 +1025,28 @@ Supprimer definitivement ResPinGuy ?" danger || return
 # Action : aide
 
 action_help() {
-    ui_text "Aide" "ResPinGuy
-Creer une image ISO de son systeme Linux.
+    ui_text "$L_HELP_TITLE" "$L_HELP_BODY"
+}
 
-INTERFACE
-  respinguy               Ce menu
-  respinguy --build       Build direct
-  respinguy --config      Configuration directe
-  respinguy --deps        Verification des dependances
+#_____________________________________________________________________________________________
+# Action : langue
 
-COMMANDES CLASSIQUES
-  respinguy-build         Creer l'image ISO
-  respinguy-config        Modifier la configuration
-  respinguy-app-dep       Verifier les dependances
-  respinguy-app-dep-force-install
-                          Installer les dependances manquantes
-  respinguy-app-up        Mettre a jour ResPinGuy
-  respinguy-app-rm        Supprimer ResPinGuy
-
-FICHIERS
-  /usr/share/ResPinGuy-File-Config/respinguy-config
-                          Configuration par defaut
-  /usr/share/ResPinGuy-File-Config/respinguy-config.local
-                          Reglages enregistres par l'interface
-
-DOCUMENTATION
-  https://github.com/France-OPG/ResPinGuy
-
-ENVIRONNEMENT
-  RPG_UI_ENGINE=basic     Force le menu texte (redimensionnement en direct)
-  RPG_FORCE_COLOR=1       Force les couleurs ANSI du menu texte
-  NO_COLOR=1              Desactive les couleurs
-
-ResPinGuy Officiel [r]"
+action_language() {
+    local choice
+    UI_CANCEL_KEY="back"
+    choice=$(ui_menu "$L_LANG_TITLE" "$L_LANG_PROMPT" \
+        fr "Français" \
+        en "English" \
+        es "Español" \
+        de "Deutsch" \
+        pt "Português" \
+        back "$L_BTN_BACK") || return
+    case "$choice" in
+        fr|en|es|de|pt)
+            rpg_load_lang "$choice"
+            rpg_set_lang_local
+            ui_msg "$L_LANG_TITLE" "$L_LANG_SAVED" ;;
+    esac
 }
 
 #_____________________________________________________________________________________________
@@ -1102,17 +1054,18 @@ ResPinGuy Officiel [r]"
 
 main_menu() {
     local choice
-    UI_CANCEL="Quitter"
     while :; do
+        UI_CANCEL_KEY="quit"
         rpg_load_effective
-        choice=$(ui_menu "Accueil" "$(rpg_status_main)" \
-            build  "Creer l'image ISO" \
-            config "Configuration" \
-            deps   "Verifier les dependances" \
-            update "Mettre a jour ResPinGuy" \
-            remove "Supprimer ResPinGuy" \
-            help   "Aide" \
-            quit   "Quitter") || break
+        choice=$(ui_menu "$L_MENU_HOME" "$(rpg_status_main)" \
+            build  "$L_MENU_BUILD" \
+            config "$L_MENU_CONFIG" \
+            deps   "$L_MENU_DEPS" \
+            update "$L_MENU_UPDATE" \
+            remove "$L_MENU_REMOVE" \
+            lang   "$L_MENU_LANG" \
+            help   "$L_MENU_HELP" \
+            quit   "$L_MENU_QUIT") || break
 
         case "$choice" in
             build)  action_build ;;
@@ -1120,6 +1073,7 @@ main_menu() {
             deps)   action_deps ;;
             update) action_update ;;
             remove) action_remove ;;
+            lang)   action_language ;;
             help)   action_help ;;
             *)      break ;;
         esac
@@ -1131,14 +1085,16 @@ main_menu() {
 #_____________________________________________________________________________________________
 # Demarrage
 
+if [ ! -f "$RPG_LANG_DIR/fr.lang" ]; then
+    echo "ResPinGuy : fichiers de langue manquants dans $RPG_LANG_DIR" >&2
+    exit 1
+fi
+
+rpg_load_lang "$(rpg_detect_lang)"
 detect_ui
 
 if [ ! -f "$RPG_CONF" ]; then
-    ui_error "ResPinGuy" "Fichier de configuration absent :
-
-$RPG_CONF
-
-Reinstallez ResPinGuy."
+    ui_error "$L_CONF_MISSING_T" "$(printf "$L_CONF_MISSING_B" "$RPG_CONF")"
     exit 1
 fi
 
@@ -1156,8 +1112,9 @@ case "${1-}" in
     --build)  action_build ;;
     --config) action_config ;;
     --deps)   action_deps ;;
+    --lang)   action_language ;;
     "") main_menu ;;
     *)
-        echo "Usage : respinguy [--build|--config|--deps|--help]"
+        echo "$L_USAGE"
         exit 2 ;;
 esac

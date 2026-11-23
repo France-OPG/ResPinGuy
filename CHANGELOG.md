@@ -9,6 +9,9 @@ Les entrées les plus récentes sont en haut.
 ### Ajouté
 - Interface texte (TUI) lancée par `respinguy` : accueil, build, configuration,
   dépendances, mise à jour, suppression, aide.
+- Interface multilingue : français (par défaut), anglais, espagnol, allemand,
+  portugais. Choix via le menu principal ou `respinguy --lang`, mémorisé dans
+  `respinguy-config.local` (`RPG_LANG`). Traductions dans `ResPinGuy-File/lang/`.
 - Interface adaptative : la hauteur et la largeur des écrans sont recalculées
   à chaque affichage, y compris après un redimensionnement du terminal.
 - Palette de l'interface :

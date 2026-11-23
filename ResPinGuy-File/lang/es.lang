@@ -1,0 +1,313 @@
+# ResPinGuy - Traducciones: español
+
+# Botones
+L_BTN_BACK="Volver"
+L_BTN_VALIDATE="Aceptar"
+L_BTN_CANCEL="Cancelar"
+L_BTN_YES="Sí"
+L_BTN_NO="No"
+L_BTN_OK="OK"
+L_BTN_CLOSE="Cerrar"
+L_BTN_QUIT="Salir"
+
+# Textos del menú de texto
+L_PROMPT_CHOICE="Tu elección: "
+L_INPUT_CURRENT="Valor actual:"
+L_INPUT_HINT="(Intro = mantener el valor actual, \"-\" = vaciar)"
+L_PRESS_ENTER="Pulsa Intro para continuar..."
+
+# Menú principal
+L_MENU_HOME="Inicio"
+L_MENU_PROMPT="¿Qué quieres hacer?"
+L_MENU_BUILD="Crear la imagen ISO"
+L_MENU_CONFIG="Configuración"
+L_MENU_DEPS="Comprobar dependencias"
+L_MENU_UPDATE="Actualizar ResPinGuy"
+L_MENU_REMOVE="Eliminar ResPinGuy"
+L_MENU_LANG="Idioma"
+L_MENU_HELP="Ayuda"
+L_MENU_QUIT="Salir"
+
+# Estado
+L_ST_SYSTEM="Sistema"
+L_ST_KERNEL="Kernel"
+L_ST_DEPS="Depend."
+L_ST_ISO="ISO"
+L_ST_OUTPUT="Salida"
+L_ST_HOME="Home"
+L_ST_LANG="Idioma"
+L_ST_UNKNOWN="desconocido"
+L_DEPS_OK="todas instaladas"
+L_DEPS_KO="faltan"
+L_DEPS_UNKNOWN="sin comprobar"
+L_HOME_ISO="incluido en la ISO (sin persistencia)"
+L_HOME_PERS="incluido en la ISO + persistencia"
+L_HOME_NONE="ninguno"
+L_LANG_NAME="Español"
+
+# Configuración: resumen
+L_CFG_NAME="Nombre"
+L_CFG_OUT="Salida"
+L_CFG_HOME="Home"
+L_CFG_KERNEL="Kernel"
+L_CFG_DIRS="Carpetas"
+L_CFG_PROMPT="Elige un ajuste para cambiar."
+L_CFG_KERNEL_FORCED="forzado: %s / %s"
+L_CFG_KERNEL_AUTO="automático: %s"
+
+# Configuración: menú
+L_CFG_TITLE="Configuración"
+L_CFG_ITEM_NAME="Nombre de la imagen ISO"
+L_CFG_ITEM_OUT="Carpeta de salida"
+L_CFG_ITEM_HOME="Home del usuario"
+L_CFG_ITEM_KERNEL="Kernel / vmlinuz"
+L_CFG_ITEM_ROOTDIR="Carpetas incluidas en la ISO"
+L_CFG_ITEM_EDIT="Editar ajustes (nano)"
+L_CFG_ITEM_RESET="Restablecer ajustes"
+
+# Nombre de la imagen
+L_NAME_TITLE="Nombre de la imagen"
+L_NAME_PROMPT="Nombre base de la ISO (sin extensión):"
+L_NAME_INVALID_T="Nombre no válido"
+L_NAME_INVALID_B="El nombre no puede estar vacío ni contener /."
+L_NAME_SAVED="Nombre guardado:
+
+%s"
+
+# Carpeta de salida
+L_OUT_TITLE="Carpeta de salida"
+L_OUT_PROMPT="Carpeta donde se escribirá la ISO (ruta absoluta):"
+L_OUT_INVALID_T="Carpeta no válida"
+L_OUT_INVALID_B="Esta carpeta no está permitida:
+
+%s
+
+La compilación borra esta carpeta antes de crear la ISO.
+Elige una carpeta dedicada, por ejemplo:
+/home/ResPinGuy o /tmp/ResPinGuy"
+L_OUT_SAVED="Carpeta de salida guardada:
+
+%s"
+
+# Carpetas incluidas
+L_ROOTDIR_TITLE="Carpetas incluidas"
+L_ROOTDIR_PROMPT="Carpetas de / a incluir (separadas por espacios):
+
+No pongas / delante.
+proc, sys, tmp, run y dev se excluyen automáticamente."
+L_ROOTDIR_EMPTY="La lista no puede estar vacía."
+L_ROOTDIR_SAVED="Lista guardada."
+
+# Editor
+L_EDIT_TITLE="Editor"
+L_EDIT_OK="Archivo guardado y válido."
+L_EDIT_ERR_T="Error de sintaxis"
+
+# Restablecer
+L_RESET_TITLE="Restablecer"
+L_RESET_PROMPT="¿Eliminar todos los ajustes guardados por la interfaz?
+
+respinguy-config volverá a sus valores predeterminados."
+L_RESET_DONE="Ajustes de la interfaz eliminados."
+
+# Configuración inválida
+L_LOAD_ERR_T="Configuración"
+L_LOAD_ERR_B="No se pudo cargar la configuración.
+
+Probablemente no se detectó el kernel.
+Ejecuta respinguy-app-dep y comprueba el kernel.
+
+¿Abrir el archivo de configuración en nano?"
+
+# Home del usuario
+L_HOME_TITLE="Configuración - Home del usuario"
+L_HOME_ITEM_NONE="No incluir un home"
+L_HOME_ITEM_ISO="Incluir el home en la ISO"
+L_HOME_ITEM_PERS="Incluir el home + persistencia"
+L_HOME_ITEM_PATH="Cambiar la ruta del home"
+L_HOME_PATH_PROMPT="Ruta del home a incluir (ruta absoluta):"
+L_HOME_NOT_FOUND_T="Home"
+L_HOME_NOT_FOUND_B="Carpeta no encontrada:
+
+%s"
+L_HOME_NONE_SAVED="No se incluirá ningún home."
+L_HOME_ISO_SAVED="El home se incluirá solo en la ISO.
+
+Los archivos se copian en /etc/skel durante la compilación
+y /etc/skel se restaura al final."
+L_HOME_PERS_SAVED="El home se incluirá en la ISO con persistencia.
+
+Los archivos se copian en /etc/skel y permanecen allí,
+también para el sistema instalado desde la ISO."
+L_HOME_PATH_SAVED="Ruta guardada:
+
+%s"
+L_HOME_PATH_NOMODE="Ruta guardada:
+
+%s
+
+Todavía no se incluye ningún home.
+Elige \"Incluir el home en la ISO\" o
+\"Incluir el home + persistencia\" para activarlo."
+
+# Kernel
+L_KERNEL_TITLE="Configuración - Kernel"
+L_KERNEL_ITEM_VER="Versión del kernel"
+L_KERNEL_ITEM_PATH="Ruta del vmlinuz"
+L_KERNEL_ITEM_AUTO="Detección automática"
+L_KERNEL_VER_TITLE="Versión del kernel"
+L_KERNEL_VER_PROMPT="Versión usada por dracut (--kver):"
+L_KERNEL_VER_EMPTY="Versión vacía: se mantiene la detección automática."
+L_KERNEL_VER_SAVED="Versión guardada:
+
+%s"
+L_KERNEL_PATH_TITLE="Ruta del vmlinuz"
+L_KERNEL_PATH_PROMPT="Ruta absoluta del kernel:"
+L_KERNEL_NOT_FOUND_T="Kernel"
+L_KERNEL_NOT_FOUND_B="Archivo no encontrado:
+
+%s"
+L_KERNEL_SAVED="Kernel guardado:
+
+%s
+Versión: %s"
+L_KERNEL_AUTO_DONE="Detección automática restablecida.
+
+El kernel se detectará en cada compilación."
+
+# Compilación
+L_BUILD_TITLE="Crear la imagen ISO"
+L_BUILD_ERR_T="No se puede compilar"
+L_BUILD_ERR_B="La configuración está incompleta.
+
+Comprueba el kernel y el nombre de la imagen en Configuración.
+También puedes ejecutar: respinguy-app-dep"
+L_BUILD_DEPS_T="Compilación"
+L_BUILD_DEPS_B="Parecen faltar dependencias.
+
+Se recomienda comprobarlas antes de compilar.
+
+¿Continuar de todos modos?"
+L_BUILD_SUMMARY_T="Crear la imagen ISO"
+L_BUILD_SUMMARY_B="Resumen de la compilación
+
+Nombre de la imagen : %s
+Kernel              : %s
+Versión del kernel  : %s
+Arquitectura        : %s
+Carpetas            : %s
+Home del usuario    : %s
+
+ISO de salida       : %s
+Carpeta de compil.  : /respinguy-build-dir/
+
+¿Iniciar la creación?"
+L_BUILD_DONE_T="Compilación terminada"
+L_BUILD_DONE_B="Imagen ISO creada:
+
+%s"
+L_BUILD_FAIL_T="Compilación interrumpida"
+L_BUILD_FAIL_B="La compilación se detuvo con el código %s.
+
+Consulta los mensajes mostrados en la terminal."
+
+# Dependencias
+L_DEPS_TITLE="Dependencias"
+L_DEPS_MISSING_T="Dependencias faltantes"
+L_DEPS_MISSING_B="Faltan algunas dependencias.
+
+¿Iniciar la instalación automática?
+
+Se usará el gestor de paquetes detectado
+(apt, dnf, yum, pacman, zypper o emerge)."
+L_DEPS_DONE="Instalación terminada.
+Todas las dependencias están presentes."
+L_DEPS_PARTIAL="Instalación terminada, pero aún faltan elementos.
+
+Vuelve a comprobar o instálalos manualmente."
+
+# Actualización
+L_UPDATE_T="Actualización"
+L_UPDATE_B="ResPinGuy se descargará desde GitHub
+y se reinstalarán sus comandos y archivos.
+
+Tu configuración actual se conserva.
+
+¿Continuar?"
+
+# Eliminación
+L_REMOVE_T="Eliminar ResPinGuy"
+L_REMOVE_B="ResPinGuy se eliminará de este sistema.
+
+Se borrarán los comandos, los archivos y la carpeta de compilación.
+Tu configuración se perderá.
+
+¿Continuar?"
+L_REMOVE_C_T="Confirmación"
+L_REMOVE_C_B="Confirmación final.
+
+¿Eliminar ResPinGuy definitivamente?"
+
+# Compatibilidad
+L_COMPAT_T="Configuración antigua"
+L_COMPAT_B="Tu archivo respinguy-config aún no admite
+los ajustes guardados por la interfaz.
+
+¿Añadir esta compatibilidad ahora?
+
+Tu configuración actual se conserva, no se sobrescribe nada."
+L_COMPAT_DONE="Compatibilidad añadida.
+La interfaz ya puede guardar tus ajustes."
+L_COMPAT_SKIP="Sin este cambio, los ajustes elegidos
+en la interfaz no se aplicarán a la compilación."
+
+# Idioma
+L_LANG_TITLE="Idioma"
+L_LANG_PROMPT="Elige el idioma de la interfaz:"
+L_LANG_SAVED="Idioma guardado."
+
+# Configuración ausente
+L_CONF_MISSING_T="ResPinGuy"
+L_CONF_MISSING_B="Archivo de configuración ausente:
+
+%s
+
+Reinstala ResPinGuy."
+
+# Ayuda
+L_HELP_TITLE="Ayuda"
+L_HELP_BODY="ResPinGuy
+Crear una imagen ISO de tu sistema Linux.
+
+INTERFAZ
+  respinguy               Este menú
+  respinguy --build       Compilación directa
+  respinguy --config      Configuración directa
+  respinguy --deps        Comprobación de dependencias
+
+COMANDOS
+  respinguy-build         Crear la imagen ISO
+  respinguy-config        Editar la configuración
+  respinguy-app-dep       Comprobar dependencias
+  respinguy-app-dep-force-install
+                          Instalar dependencias faltantes
+  respinguy-app-up        Actualizar ResPinGuy
+  respinguy-app-rm        Eliminar ResPinGuy
+
+ARCHIVOS
+  /usr/share/ResPinGuy-File-Config/respinguy-config
+                          Configuración por defecto
+  /usr/share/ResPinGuy-File-Config/respinguy-config.local
+                          Ajustes guardados por la interfaz
+
+DOCUMENTACIÓN
+  https://github.com/France-OPG/ResPinGuy
+
+ENTORNO
+  RPG_UI_ENGINE=basic     Fuerza el menú de texto (redimensionado en vivo)
+  RPG_FORCE_COLOR=1       Fuerza los colores ANSI del menú de texto
+  NO_COLOR=1              Desactiva los colores
+
+ResPinGuy Oficial [r]"
+
+L_USAGE="Uso: respinguy [--build|--config|--deps|--lang|--help]"

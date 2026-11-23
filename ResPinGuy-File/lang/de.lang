@@ -1,0 +1,313 @@
+# ResPinGuy - Übersetzungen: Deutsch
+
+# Schaltflächen
+L_BTN_BACK="Zurück"
+L_BTN_VALIDATE="Bestätigen"
+L_BTN_CANCEL="Abbrechen"
+L_BTN_YES="Ja"
+L_BTN_NO="Nein"
+L_BTN_OK="OK"
+L_BTN_CLOSE="Schließen"
+L_BTN_QUIT="Beenden"
+
+# Texte des Textmenüs
+L_PROMPT_CHOICE="Deine Wahl: "
+L_INPUT_CURRENT="Aktueller Wert:"
+L_INPUT_HINT="(Enter = aktuellen Wert behalten, \"-\" = leeren)"
+L_PRESS_ENTER="Enter drücken zum Fortfahren..."
+
+# Hauptmenü
+L_MENU_HOME="Start"
+L_MENU_PROMPT="Was möchtest du tun?"
+L_MENU_BUILD="ISO-Abbild erstellen"
+L_MENU_CONFIG="Konfiguration"
+L_MENU_DEPS="Abhängigkeiten prüfen"
+L_MENU_UPDATE="ResPinGuy aktualisieren"
+L_MENU_REMOVE="ResPinGuy entfernen"
+L_MENU_LANG="Sprache"
+L_MENU_HELP="Hilfe"
+L_MENU_QUIT="Beenden"
+
+# Status
+L_ST_SYSTEM="System"
+L_ST_KERNEL="Kernel"
+L_ST_DEPS="Abhängigk."
+L_ST_ISO="ISO"
+L_ST_OUTPUT="Ausgabe"
+L_ST_HOME="Home"
+L_ST_LANG="Sprache"
+L_ST_UNKNOWN="unbekannt"
+L_DEPS_OK="alle installiert"
+L_DEPS_KO="fehlen"
+L_DEPS_UNKNOWN="nicht geprüft"
+L_HOME_ISO="im ISO enthalten (ohne Persistenz)"
+L_HOME_PERS="im ISO enthalten + Persistenz"
+L_HOME_NONE="keiner"
+L_LANG_NAME="Deutsch"
+
+# Konfiguration: Übersicht
+L_CFG_NAME="Name"
+L_CFG_OUT="Ausgabe"
+L_CFG_HOME="Home"
+L_CFG_KERNEL="Kernel"
+L_CFG_DIRS="Ordner"
+L_CFG_PROMPT="Wähle eine Einstellung zum Ändern."
+L_CFG_KERNEL_FORCED="erzwungen: %s / %s"
+L_CFG_KERNEL_AUTO="automatisch: %s"
+
+# Konfiguration: Menü
+L_CFG_TITLE="Konfiguration"
+L_CFG_ITEM_NAME="Name des ISO-Abbilds"
+L_CFG_ITEM_OUT="Ausgabeordner"
+L_CFG_ITEM_HOME="Benutzer-Home"
+L_CFG_ITEM_KERNEL="Kernel / vmlinuz"
+L_CFG_ITEM_ROOTDIR="Ordner im ISO"
+L_CFG_ITEM_EDIT="Einstellungen bearbeiten (nano)"
+L_CFG_ITEM_RESET="Einstellungen zurücksetzen"
+
+# Abbildname
+L_NAME_TITLE="Name des Abbilds"
+L_NAME_PROMPT="Basisname des ISO (ohne Endung):"
+L_NAME_INVALID_T="Ungültiger Name"
+L_NAME_INVALID_B="Der Name darf nicht leer sein und kein / enthalten."
+L_NAME_SAVED="Name gespeichert:
+
+%s"
+
+# Ausgabeordner
+L_OUT_TITLE="Ausgabeordner"
+L_OUT_PROMPT="Ordner für das ISO (absoluter Pfad):"
+L_OUT_INVALID_T="Ungültiger Ordner"
+L_OUT_INVALID_B="Dieser Ordner ist nicht erlaubt:
+
+%s
+
+Der Build löscht diesen Ordner vor dem Erstellen des ISO.
+Wähle einen eigenen Ordner, zum Beispiel:
+/home/ResPinGuy oder /tmp/ResPinGuy"
+L_OUT_SAVED="Ausgabeordner gespeichert:
+
+%s"
+
+# Enthaltene Ordner
+L_ROOTDIR_TITLE="Enthaltene Ordner"
+L_ROOTDIR_PROMPT="Ordner von / (durch Leerzeichen getrennt):
+
+Kein / voranstellen.
+proc, sys, tmp, run und dev werden automatisch ausgeschlossen."
+L_ROOTDIR_EMPTY="Die Liste darf nicht leer sein."
+L_ROOTDIR_SAVED="Liste gespeichert."
+
+# Editor
+L_EDIT_TITLE="Editor"
+L_EDIT_OK="Datei gespeichert und gültig."
+L_EDIT_ERR_T="Syntaxfehler"
+
+# Zurücksetzen
+L_RESET_TITLE="Zurücksetzen"
+L_RESET_PROMPT="Alle von der Oberfläche gespeicherten Einstellungen löschen?
+
+respinguy-config verwendet wieder die Standardwerte."
+L_RESET_DONE="Oberflächen-Einstellungen gelöscht."
+
+# Ungültige Konfiguration
+L_LOAD_ERR_T="Konfiguration"
+L_LOAD_ERR_B="Die Konfiguration konnte nicht geladen werden.
+
+Der Kernel wurde wahrscheinlich nicht erkannt.
+Führe respinguy-app-dep aus und prüfe den Kernel.
+
+Konfigurationsdatei in nano öffnen?"
+
+# Benutzer-Home
+L_HOME_TITLE="Konfiguration - Benutzer-Home"
+L_HOME_ITEM_NONE="Kein Home einbinden"
+L_HOME_ITEM_ISO="Home ins ISO einbinden"
+L_HOME_ITEM_PERS="Home + Persistenz einbinden"
+L_HOME_ITEM_PATH="Home-Pfad ändern"
+L_HOME_PATH_PROMPT="Pfad des Homes (absoluter Pfad):"
+L_HOME_NOT_FOUND_T="Home"
+L_HOME_NOT_FOUND_B="Ordner nicht gefunden:
+
+%s"
+L_HOME_NONE_SAVED="Es wird kein Home eingebunden."
+L_HOME_ISO_SAVED="Das Home wird nur ins ISO eingebunden.
+
+Die Dateien werden während des Builds nach /etc/skel kopiert,
+danach wird /etc/skel wiederhergestellt."
+L_HOME_PERS_SAVED="Das Home wird mit Persistenz ins ISO eingebunden.
+
+Die Dateien werden nach /etc/skel kopiert und bleiben dort,
+auch für das aus dem ISO installierte System."
+L_HOME_PATH_SAVED="Pfad gespeichert:
+
+%s"
+L_HOME_PATH_NOMODE="Pfad gespeichert:
+
+%s
+
+Es ist noch kein Home eingebunden.
+Wähle \"Home ins ISO einbinden\" oder
+\"Home + Persistenz einbinden\", um es zu aktivieren."
+
+# Kernel
+L_KERNEL_TITLE="Konfiguration - Kernel"
+L_KERNEL_ITEM_VER="Kernel-Version"
+L_KERNEL_ITEM_PATH="Pfad der vmlinuz"
+L_KERNEL_ITEM_AUTO="Automatische Erkennung"
+L_KERNEL_VER_TITLE="Kernel-Version"
+L_KERNEL_VER_PROMPT="Von dracut verwendete Version (--kver):"
+L_KERNEL_VER_EMPTY="Leere Version: automatische Erkennung bleibt."
+L_KERNEL_VER_SAVED="Version gespeichert:
+
+%s"
+L_KERNEL_PATH_TITLE="Pfad der vmlinuz"
+L_KERNEL_PATH_PROMPT="Absoluter Kernel-Pfad:"
+L_KERNEL_NOT_FOUND_T="Kernel"
+L_KERNEL_NOT_FOUND_B="Datei nicht gefunden:
+
+%s"
+L_KERNEL_SAVED="Kernel gespeichert:
+
+%s
+Version: %s"
+L_KERNEL_AUTO_DONE="Automatische Erkennung wiederhergestellt.
+
+Der Kernel wird bei jedem Build erkannt."
+
+# Build
+L_BUILD_TITLE="ISO-Abbild erstellen"
+L_BUILD_ERR_T="Build nicht möglich"
+L_BUILD_ERR_B="Die Konfiguration ist unvollständig.
+
+Prüfe den Kernel und den Abbildnamen in der Konfiguration.
+Du kannst auch ausführen: respinguy-app-dep"
+L_BUILD_DEPS_T="Build"
+L_BUILD_DEPS_B="Einige Abhängigkeiten scheinen zu fehlen.
+
+Es wird empfohlen, sie vor dem Build zu prüfen.
+
+Trotzdem fortfahren?"
+L_BUILD_SUMMARY_T="ISO-Abbild erstellen"
+L_BUILD_SUMMARY_B="Build-Übersicht
+
+Abbildname     : %s
+Kernel         : %s
+Kernel-Version : %s
+Architektur    : %s
+Ordner         : %s
+Benutzer-Home  : %s
+
+Ausgabe-ISO    : %s
+Build-Ordner   : /respinguy-build-dir/
+
+Erstellung starten?"
+L_BUILD_DONE_T="Build abgeschlossen"
+L_BUILD_DONE_B="ISO-Abbild erstellt:
+
+%s"
+L_BUILD_FAIL_T="Build abgebrochen"
+L_BUILD_FAIL_B="Der Build wurde mit Code %s beendet.
+
+Prüfe die im Terminal angezeigten Meldungen."
+
+# Abhängigkeiten
+L_DEPS_TITLE="Abhängigkeiten"
+L_DEPS_MISSING_T="Fehlende Abhängigkeiten"
+L_DEPS_MISSING_B="Einige Abhängigkeiten fehlen.
+
+Automatische Installation starten?
+
+Der erkannte Paketmanager wird verwendet
+(apt, dnf, yum, pacman, zypper oder emerge)."
+L_DEPS_DONE="Installation abgeschlossen.
+Alle Abhängigkeiten sind vorhanden."
+L_DEPS_PARTIAL="Installation abgeschlossen, aber einige Elemente fehlen noch.
+
+Starte die Prüfung erneut oder installiere sie manuell."
+
+# Aktualisierung
+L_UPDATE_T="Aktualisierung"
+L_UPDATE_B="ResPinGuy wird von GitHub heruntergeladen
+und seine Befehle und Dateien werden neu installiert.
+
+Deine aktuelle Konfiguration bleibt erhalten.
+
+Fortfahren?"
+
+# Entfernen
+L_REMOVE_T="ResPinGuy entfernen"
+L_REMOVE_B="ResPinGuy wird von diesem System entfernt.
+
+Die Befehle, Dateien und der Build-Ordner werden gelöscht.
+Deine Konfiguration geht verloren.
+
+Fortfahren?"
+L_REMOVE_C_T="Bestätigung"
+L_REMOVE_C_B="Letzte Bestätigung.
+
+ResPinGuy endgültig entfernen?"
+
+# Kompatibilität
+L_COMPAT_T="Alte Konfiguration"
+L_COMPAT_B="Deine respinguy-config unterstützt noch nicht
+die von der Oberfläche gespeicherten Einstellungen.
+
+Diese Unterstützung jetzt hinzufügen?
+
+Deine aktuelle Konfiguration bleibt erhalten, nichts wird überschrieben."
+L_COMPAT_DONE="Unterstützung hinzugefügt.
+Die Oberfläche kann jetzt deine Einstellungen speichern."
+L_COMPAT_SKIP="Ohne diese Änderung werden die gewählten
+Einstellungen nicht auf den Build angewendet."
+
+# Sprache
+L_LANG_TITLE="Sprache"
+L_LANG_PROMPT="Wähle die Sprache der Oberfläche:"
+L_LANG_SAVED="Sprache gespeichert."
+
+# Fehlende Konfiguration
+L_CONF_MISSING_T="ResPinGuy"
+L_CONF_MISSING_B="Konfigurationsdatei fehlt:
+
+%s
+
+Installiere ResPinGuy neu."
+
+# Hilfe
+L_HELP_TITLE="Hilfe"
+L_HELP_BODY="ResPinGuy
+ISO-Abbild des eigenen Linux-Systems erstellen.
+
+OBERFLÄCHE
+  respinguy               Dieses Menü
+  respinguy --build       Direkter Build
+  respinguy --config      Direkte Konfiguration
+  respinguy --deps        Abhängigkeiten prüfen
+
+BEFEHLE
+  respinguy-build         ISO-Abbild erstellen
+  respinguy-config        Konfiguration bearbeiten
+  respinguy-app-dep       Abhängigkeiten prüfen
+  respinguy-app-dep-force-install
+                          Fehlende Abhängigkeiten installieren
+  respinguy-app-up        ResPinGuy aktualisieren
+  respinguy-app-rm        ResPinGuy entfernen
+
+DATEIEN
+  /usr/share/ResPinGuy-File-Config/respinguy-config
+                          Standardkonfiguration
+  /usr/share/ResPinGuy-File-Config/respinguy-config.local
+                          Von der Oberfläche gespeicherte Einstellungen
+
+DOKUMENTATION
+  https://github.com/France-OPG/ResPinGuy
+
+UMGEBUNG
+  RPG_UI_ENGINE=basic     Erzwingt das Textmenü (Live-Größenänderung)
+  RPG_FORCE_COLOR=1       Erzwingt ANSI-Farben im Textmenü
+  NO_COLOR=1              Deaktiviert Farben
+
+ResPinGuy Offiziell [r]"
+
+L_USAGE="Verwendung: respinguy [--build|--config|--deps|--lang|--help]"

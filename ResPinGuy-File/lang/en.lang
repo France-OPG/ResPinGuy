@@ -1,0 +1,313 @@
+# ResPinGuy - Translations: English
+
+# Buttons
+L_BTN_BACK="Back"
+L_BTN_VALIDATE="OK"
+L_BTN_CANCEL="Cancel"
+L_BTN_YES="Yes"
+L_BTN_NO="No"
+L_BTN_OK="OK"
+L_BTN_CLOSE="Close"
+L_BTN_QUIT="Quit"
+
+# Text menu strings
+L_PROMPT_CHOICE="Your choice: "
+L_INPUT_CURRENT="Current value:"
+L_INPUT_HINT="(Enter = keep current value, \"-\" = clear)"
+L_PRESS_ENTER="Press Enter to continue..."
+
+# Main menu
+L_MENU_HOME="Home"
+L_MENU_PROMPT="What do you want to do?"
+L_MENU_BUILD="Create the ISO image"
+L_MENU_CONFIG="Configuration"
+L_MENU_DEPS="Check dependencies"
+L_MENU_UPDATE="Update ResPinGuy"
+L_MENU_REMOVE="Remove ResPinGuy"
+L_MENU_LANG="Language"
+L_MENU_HELP="Help"
+L_MENU_QUIT="Quit"
+
+# Status
+L_ST_SYSTEM="System"
+L_ST_KERNEL="Kernel"
+L_ST_DEPS="Deps"
+L_ST_ISO="ISO"
+L_ST_OUTPUT="Output"
+L_ST_HOME="Home"
+L_ST_LANG="Language"
+L_ST_UNKNOWN="unknown"
+L_DEPS_OK="all installed"
+L_DEPS_KO="missing"
+L_DEPS_UNKNOWN="not checked"
+L_HOME_ISO="included in the ISO (no persistence)"
+L_HOME_PERS="included in the ISO + persistence"
+L_HOME_NONE="none"
+L_LANG_NAME="English"
+
+# Configuration: summary
+L_CFG_NAME="Name"
+L_CFG_OUT="Output"
+L_CFG_HOME="Home"
+L_CFG_KERNEL="Kernel"
+L_CFG_DIRS="Folders"
+L_CFG_PROMPT="Choose a setting to change."
+L_CFG_KERNEL_FORCED="forced: %s / %s"
+L_CFG_KERNEL_AUTO="automatic: %s"
+
+# Configuration: menu
+L_CFG_TITLE="Configuration"
+L_CFG_ITEM_NAME="ISO image name"
+L_CFG_ITEM_OUT="Output folder"
+L_CFG_ITEM_HOME="User home"
+L_CFG_ITEM_KERNEL="Kernel / vmlinuz"
+L_CFG_ITEM_ROOTDIR="Folders included in the ISO"
+L_CFG_ITEM_EDIT="Edit settings (nano)"
+L_CFG_ITEM_RESET="Reset settings"
+
+# Image name
+L_NAME_TITLE="Image name"
+L_NAME_PROMPT="Base name of the ISO (no extension):"
+L_NAME_INVALID_T="Invalid name"
+L_NAME_INVALID_B="The name must not be empty and must not contain /."
+L_NAME_SAVED="Name saved:
+
+%s"
+
+# Output folder
+L_OUT_TITLE="Output folder"
+L_OUT_PROMPT="Folder where the ISO will be written (absolute path):"
+L_OUT_INVALID_T="Invalid folder"
+L_OUT_INVALID_B="This folder is not allowed:
+
+%s
+
+The build deletes this folder before creating the ISO.
+Choose a dedicated folder, for example:
+/home/ResPinGuy or /tmp/ResPinGuy"
+L_OUT_SAVED="Output folder saved:
+
+%s"
+
+# Included folders
+L_ROOTDIR_TITLE="Included folders"
+L_ROOTDIR_PROMPT="Folders from / to include (space-separated):
+
+Do not prefix with /.
+proc, sys, tmp, run and dev are excluded automatically."
+L_ROOTDIR_EMPTY="The list cannot be empty."
+L_ROOTDIR_SAVED="List saved."
+
+# Editor
+L_EDIT_TITLE="Editor"
+L_EDIT_OK="File saved and valid."
+L_EDIT_ERR_T="Syntax error"
+
+# Reset
+L_RESET_TITLE="Reset"
+L_RESET_PROMPT="Delete all settings saved by the interface?
+
+respinguy-config will return to its default values."
+L_RESET_DONE="Interface settings deleted."
+
+# Invalid configuration
+L_LOAD_ERR_T="Configuration"
+L_LOAD_ERR_B="The configuration could not be loaded.
+
+The kernel was probably not detected.
+Run respinguy-app-dep and check the kernel.
+
+Open the configuration file in nano?"
+
+# User home
+L_HOME_TITLE="Configuration - User home"
+L_HOME_ITEM_NONE="Do not include a home"
+L_HOME_ITEM_ISO="Include the home in the ISO"
+L_HOME_ITEM_PERS="Include the home + persistence"
+L_HOME_ITEM_PATH="Change the home path"
+L_HOME_PATH_PROMPT="Home path to include (absolute path):"
+L_HOME_NOT_FOUND_T="Home"
+L_HOME_NOT_FOUND_B="Folder not found:
+
+%s"
+L_HOME_NONE_SAVED="No home will be included."
+L_HOME_ISO_SAVED="The home will be included in the ISO only.
+
+Files are copied to /etc/skel during the build,
+then /etc/skel is restored at the end."
+L_HOME_PERS_SAVED="The home will be included in the ISO with persistence.
+
+Files are copied to /etc/skel and stay there,
+including for the system installed from the ISO."
+L_HOME_PATH_SAVED="Path saved:
+
+%s"
+L_HOME_PATH_NOMODE="Path saved:
+
+%s
+
+No home is included yet.
+Choose \"Include the home in the ISO\" or
+\"Include the home + persistence\" to enable it."
+
+# Kernel
+L_KERNEL_TITLE="Configuration - Kernel"
+L_KERNEL_ITEM_VER="Kernel version"
+L_KERNEL_ITEM_PATH="vmlinuz path"
+L_KERNEL_ITEM_AUTO="Automatic detection"
+L_KERNEL_VER_TITLE="Kernel version"
+L_KERNEL_VER_PROMPT="Version used by dracut (--kver):"
+L_KERNEL_VER_EMPTY="Empty version: automatic detection kept."
+L_KERNEL_VER_SAVED="Version saved:
+
+%s"
+L_KERNEL_PATH_TITLE="vmlinuz path"
+L_KERNEL_PATH_PROMPT="Absolute kernel path:"
+L_KERNEL_NOT_FOUND_T="Kernel"
+L_KERNEL_NOT_FOUND_B="File not found:
+
+%s"
+L_KERNEL_SAVED="Kernel saved:
+
+%s
+Version: %s"
+L_KERNEL_AUTO_DONE="Automatic detection restored.
+
+The kernel will be detected at each build."
+
+# Build
+L_BUILD_TITLE="Create the ISO image"
+L_BUILD_ERR_T="Cannot build"
+L_BUILD_ERR_B="The configuration is incomplete.
+
+Check the kernel and image name in Configuration.
+You can also run: respinguy-app-dep"
+L_BUILD_DEPS_T="Build"
+L_BUILD_DEPS_B="Some dependencies seem to be missing.
+
+It is recommended to check them before building.
+
+Continue anyway?"
+L_BUILD_SUMMARY_T="Create the ISO image"
+L_BUILD_SUMMARY_B="Build summary
+
+Image name      : %s
+Kernel          : %s
+Kernel version  : %s
+Architecture    : %s
+Folders         : %s
+User home       : %s
+
+Output ISO      : %s
+Build folder    : /respinguy-build-dir/
+
+Start the creation?"
+L_BUILD_DONE_T="Build finished"
+L_BUILD_DONE_B="ISO image created:
+
+%s"
+L_BUILD_FAIL_T="Build interrupted"
+L_BUILD_FAIL_B="The build stopped with code %s.
+
+Check the messages displayed in the terminal."
+
+# Dependencies
+L_DEPS_TITLE="Dependencies"
+L_DEPS_MISSING_T="Missing dependencies"
+L_DEPS_MISSING_B="Some dependencies are missing.
+
+Run the automatic installation?
+
+The detected package manager will be used
+(apt, dnf, yum, pacman, zypper or emerge)."
+L_DEPS_DONE="Installation finished.
+All dependencies are present."
+L_DEPS_PARTIAL="Installation finished, but some items are still missing.
+
+Run the check again or install them manually."
+
+# Update
+L_UPDATE_T="Update"
+L_UPDATE_B="ResPinGuy will be downloaded from GitHub
+and its commands and files will be reinstalled.
+
+Your current configuration is kept.
+
+Continue?"
+
+# Remove
+L_REMOVE_T="Remove ResPinGuy"
+L_REMOVE_B="ResPinGuy will be removed from this system.
+
+The commands, files and build folder
+will be deleted. Your configuration will be lost.
+
+Continue?"
+L_REMOVE_C_T="Confirmation"
+L_REMOVE_C_B="Final confirmation.
+
+Permanently remove ResPinGuy?"
+
+# Compatibility
+L_COMPAT_T="Old configuration"
+L_COMPAT_B="Your respinguy-config file does not yet support
+the settings saved by the interface.
+
+Add this support now?
+
+Your current configuration is kept, nothing is overwritten."
+L_COMPAT_DONE="Support added.
+The interface can now save your settings."
+L_COMPAT_SKIP="Without this change, the settings chosen
+in the interface will not be applied to the build."
+
+# Language
+L_LANG_TITLE="Language"
+L_LANG_PROMPT="Choose the interface language:"
+L_LANG_SAVED="Language saved."
+
+# Missing configuration
+L_CONF_MISSING_T="ResPinGuy"
+L_CONF_MISSING_B="Configuration file missing:
+
+%s
+
+Reinstall ResPinGuy."
+
+# Help
+L_HELP_TITLE="Help"
+L_HELP_BODY="ResPinGuy
+Create an ISO image of your Linux system.
+
+INTERFACE
+  respinguy               This menu
+  respinguy --build       Direct build
+  respinguy --config      Direct configuration
+  respinguy --deps        Dependency check
+
+COMMANDS
+  respinguy-build         Create the ISO image
+  respinguy-config        Edit the configuration
+  respinguy-app-dep       Check dependencies
+  respinguy-app-dep-force-install
+                          Install missing dependencies
+  respinguy-app-up        Update ResPinGuy
+  respinguy-app-rm        Remove ResPinGuy
+
+FILES
+  /usr/share/ResPinGuy-File-Config/respinguy-config
+                          Default configuration
+  /usr/share/ResPinGuy-File-Config/respinguy-config.local
+                          Settings saved by the interface
+
+DOCUMENTATION
+  https://github.com/France-OPG/ResPinGuy
+
+ENVIRONMENT
+  RPG_UI_ENGINE=basic     Force the text menu (live resize)
+  RPG_FORCE_COLOR=1       Force ANSI colors in the text menu
+  NO_COLOR=1              Disable colors
+
+ResPinGuy Official [r]"
+
+L_USAGE="Usage: respinguy [--build|--config|--deps|--lang|--help]"

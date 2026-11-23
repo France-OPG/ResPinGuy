@@ -1,0 +1,313 @@
+# ResPinGuy - Traduções: português
+
+# Botões
+L_BTN_BACK="Voltar"
+L_BTN_VALIDATE="Validar"
+L_BTN_CANCEL="Cancelar"
+L_BTN_YES="Sim"
+L_BTN_NO="Não"
+L_BTN_OK="OK"
+L_BTN_CLOSE="Fechar"
+L_BTN_QUIT="Sair"
+
+# Textos do menu de texto
+L_PROMPT_CHOICE="Sua escolha: "
+L_INPUT_CURRENT="Valor atual:"
+L_INPUT_HINT="(Enter = manter o valor atual, \"-\" = limpar)"
+L_PRESS_ENTER="Pressione Enter para continuar..."
+
+# Menu principal
+L_MENU_HOME="Início"
+L_MENU_PROMPT="O que você quer fazer?"
+L_MENU_BUILD="Criar a imagem ISO"
+L_MENU_CONFIG="Configuração"
+L_MENU_DEPS="Verificar dependências"
+L_MENU_UPDATE="Atualizar ResPinGuy"
+L_MENU_REMOVE="Remover ResPinGuy"
+L_MENU_LANG="Idioma"
+L_MENU_HELP="Ajuda"
+L_MENU_QUIT="Sair"
+
+# Estado
+L_ST_SYSTEM="Sistema"
+L_ST_KERNEL="Kernel"
+L_ST_DEPS="Depend."
+L_ST_ISO="ISO"
+L_ST_OUTPUT="Saída"
+L_ST_HOME="Home"
+L_ST_LANG="Idioma"
+L_ST_UNKNOWN="desconhecido"
+L_DEPS_OK="todas instaladas"
+L_DEPS_KO="faltando"
+L_DEPS_UNKNOWN="não verificadas"
+L_HOME_ISO="incluído na ISO (sem persistência)"
+L_HOME_PERS="incluído na ISO + persistência"
+L_HOME_NONE="nenhum"
+L_LANG_NAME="Português"
+
+# Configuração: resumo
+L_CFG_NAME="Nome"
+L_CFG_OUT="Saída"
+L_CFG_HOME="Home"
+L_CFG_KERNEL="Kernel"
+L_CFG_DIRS="Pastas"
+L_CFG_PROMPT="Escolha uma configuração para alterar."
+L_CFG_KERNEL_FORCED="forçado: %s / %s"
+L_CFG_KERNEL_AUTO="automático: %s"
+
+# Configuração: menu
+L_CFG_TITLE="Configuração"
+L_CFG_ITEM_NAME="Nome da imagem ISO"
+L_CFG_ITEM_OUT="Pasta de saída"
+L_CFG_ITEM_HOME="Home do usuário"
+L_CFG_ITEM_KERNEL="Kernel / vmlinuz"
+L_CFG_ITEM_ROOTDIR="Pastas incluídas na ISO"
+L_CFG_ITEM_EDIT="Editar configurações (nano)"
+L_CFG_ITEM_RESET="Redefinir configurações"
+
+# Nome da imagem
+L_NAME_TITLE="Nome da imagem"
+L_NAME_PROMPT="Nome base da ISO (sem extensão):"
+L_NAME_INVALID_T="Nome inválido"
+L_NAME_INVALID_B="O nome não pode estar vazio nem conter /."
+L_NAME_SAVED="Nome salvo:
+
+%s"
+
+# Pasta de saída
+L_OUT_TITLE="Pasta de saída"
+L_OUT_PROMPT="Pasta onde a ISO será gravada (caminho absoluto):"
+L_OUT_INVALID_T="Pasta inválida"
+L_OUT_INVALID_B="Esta pasta não é permitida:
+
+%s
+
+A compilação apaga esta pasta antes de criar a ISO.
+Escolha uma pasta dedicada, por exemplo:
+/home/ResPinGuy ou /tmp/ResPinGuy"
+L_OUT_SAVED="Pasta de saída salva:
+
+%s"
+
+# Pastas incluídas
+L_ROOTDIR_TITLE="Pastas incluídas"
+L_ROOTDIR_PROMPT="Pastas de / a incluir (separadas por espaços):
+
+Não coloque / na frente.
+proc, sys, tmp, run e dev são excluídos automaticamente."
+L_ROOTDIR_EMPTY="A lista não pode estar vazia."
+L_ROOTDIR_SAVED="Lista salva."
+
+# Editor
+L_EDIT_TITLE="Editor"
+L_EDIT_OK="Arquivo salvo e válido."
+L_EDIT_ERR_T="Erro de sintaxe"
+
+# Redefinir
+L_RESET_TITLE="Redefinir"
+L_RESET_PROMPT="Apagar todas as configurações salvas pela interface?
+
+respinguy-config voltará aos valores padrão."
+L_RESET_DONE="Configurações da interface apagadas."
+
+# Configuração inválida
+L_LOAD_ERR_T="Configuração"
+L_LOAD_ERR_B="Não foi possível carregar a configuração.
+
+O kernel provavelmente não foi detectado.
+Execute respinguy-app-dep e verifique o kernel.
+
+Abrir o arquivo de configuração no nano?"
+
+# Home do usuário
+L_HOME_TITLE="Configuração - Home do usuário"
+L_HOME_ITEM_NONE="Não incluir um home"
+L_HOME_ITEM_ISO="Incluir o home na ISO"
+L_HOME_ITEM_PERS="Incluir o home + persistência"
+L_HOME_ITEM_PATH="Alterar o caminho do home"
+L_HOME_PATH_PROMPT="Caminho do home a incluir (caminho absoluto):"
+L_HOME_NOT_FOUND_T="Home"
+L_HOME_NOT_FOUND_B="Pasta não encontrada:
+
+%s"
+L_HOME_NONE_SAVED="Nenhum home será incluído."
+L_HOME_ISO_SAVED="O home será incluído apenas na ISO.
+
+Os arquivos são copiados para /etc/skel durante a compilação
+e /etc/skel é restaurado no final."
+L_HOME_PERS_SAVED="O home será incluído na ISO com persistência.
+
+Os arquivos são copiados para /etc/skel e permanecem lá,
+inclusive para o sistema instalado a partir da ISO."
+L_HOME_PATH_SAVED="Caminho salvo:
+
+%s"
+L_HOME_PATH_NOMODE="Caminho salvo:
+
+%s
+
+Nenhum home está incluído ainda.
+Escolha \"Incluir o home na ISO\" ou
+\"Incluir o home + persistência\" para ativá-lo."
+
+# Kernel
+L_KERNEL_TITLE="Configuração - Kernel"
+L_KERNEL_ITEM_VER="Versão do kernel"
+L_KERNEL_ITEM_PATH="Caminho do vmlinuz"
+L_KERNEL_ITEM_AUTO="Detecção automática"
+L_KERNEL_VER_TITLE="Versão do kernel"
+L_KERNEL_VER_PROMPT="Versão usada pelo dracut (--kver):"
+L_KERNEL_VER_EMPTY="Versão vazia: detecção automática mantida."
+L_KERNEL_VER_SAVED="Versão salva:
+
+%s"
+L_KERNEL_PATH_TITLE="Caminho do vmlinuz"
+L_KERNEL_PATH_PROMPT="Caminho absoluto do kernel:"
+L_KERNEL_NOT_FOUND_T="Kernel"
+L_KERNEL_NOT_FOUND_B="Arquivo não encontrado:
+
+%s"
+L_KERNEL_SAVED="Kernel salvo:
+
+%s
+Versão: %s"
+L_KERNEL_AUTO_DONE="Detecção automática restabelecida.
+
+O kernel será detectado a cada compilação."
+
+# Compilação
+L_BUILD_TITLE="Criar a imagem ISO"
+L_BUILD_ERR_T="Não é possível compilar"
+L_BUILD_ERR_B="A configuração está incompleta.
+
+Verifique o kernel e o nome da imagem em Configuração.
+Você também pode executar: respinguy-app-dep"
+L_BUILD_DEPS_T="Compilação"
+L_BUILD_DEPS_B="Parecem faltar dependências.
+
+É recomendável verificá-las antes de compilar.
+
+Continuar mesmo assim?"
+L_BUILD_SUMMARY_T="Criar a imagem ISO"
+L_BUILD_SUMMARY_B="Resumo da compilação
+
+Nome da imagem   : %s
+Kernel           : %s
+Versão do kernel : %s
+Arquitetura      : %s
+Pastas           : %s
+Home do usuário  : %s
+
+ISO de saída     : %s
+Pasta de compil. : /respinguy-build-dir/
+
+Iniciar a criação?"
+L_BUILD_DONE_T="Compilação concluída"
+L_BUILD_DONE_B="Imagem ISO criada:
+
+%s"
+L_BUILD_FAIL_T="Compilação interrompida"
+L_BUILD_FAIL_B="A compilação parou com o código %s.
+
+Consulte as mensagens exibidas no terminal."
+
+# Dependências
+L_DEPS_TITLE="Dependências"
+L_DEPS_MISSING_T="Dependências faltando"
+L_DEPS_MISSING_B="Algumas dependências estão faltando.
+
+Iniciar a instalação automática?
+
+O gerenciador de pacotes detectado será usado
+(apt, dnf, yum, pacman, zypper ou emerge)."
+L_DEPS_DONE="Instalação concluída.
+Todas as dependências estão presentes."
+L_DEPS_PARTIAL="Instalação concluída, mas ainda faltam itens.
+
+Execute a verificação novamente ou instale-os manualmente."
+
+# Atualização
+L_UPDATE_T="Atualização"
+L_UPDATE_B="O ResPinGuy será baixado do GitHub
+e seus comandos e arquivos serão reinstalados.
+
+Sua configuração atual é mantida.
+
+Continuar?"
+
+# Remoção
+L_REMOVE_T="Remover ResPinGuy"
+L_REMOVE_B="O ResPinGuy será removido deste sistema.
+
+Os comandos, arquivos e a pasta de compilação serão apagados.
+Sua configuração será perdida.
+
+Continuar?"
+L_REMOVE_C_T="Confirmação"
+L_REMOVE_C_B="Confirmação final.
+
+Remover o ResPinGuy definitivamente?"
+
+# Compatibilidade
+L_COMPAT_T="Configuração antiga"
+L_COMPAT_B="Seu arquivo respinguy-config ainda não suporta
+as configurações salvas pela interface.
+
+Adicionar este suporte agora?
+
+Sua configuração atual é mantida, nada é sobrescrito."
+L_COMPAT_DONE="Suporte adicionado.
+A interface agora pode salvar suas configurações."
+L_COMPAT_SKIP="Sem esta alteração, as configurações escolhidas
+na interface não serão aplicadas à compilação."
+
+# Idioma
+L_LANG_TITLE="Idioma"
+L_LANG_PROMPT="Escolha o idioma da interface:"
+L_LANG_SAVED="Idioma salvo."
+
+# Configuração ausente
+L_CONF_MISSING_T="ResPinGuy"
+L_CONF_MISSING_B="Arquivo de configuração ausente:
+
+%s
+
+Reinstale o ResPinGuy."
+
+# Ajuda
+L_HELP_TITLE="Ajuda"
+L_HELP_BODY="ResPinGuy
+Criar uma imagem ISO do seu sistema Linux.
+
+INTERFACE
+  respinguy               Este menu
+  respinguy --build       Compilação direta
+  respinguy --config      Configuração direta
+  respinguy --deps        Verificação de dependências
+
+COMANDOS
+  respinguy-build         Criar a imagem ISO
+  respinguy-config        Editar a configuração
+  respinguy-app-dep       Verificar dependências
+  respinguy-app-dep-force-install
+                          Instalar dependências faltantes
+  respinguy-app-up        Atualizar ResPinGuy
+  respinguy-app-rm        Remover ResPinGuy
+
+ARQUIVOS
+  /usr/share/ResPinGuy-File-Config/respinguy-config
+                          Configuração padrão
+  /usr/share/ResPinGuy-File-Config/respinguy-config.local
+                          Configurações salvas pela interface
+
+DOCUMENTAÇÃO
+  https://github.com/France-OPG/ResPinGuy
+
+AMBIENTE
+  RPG_UI_ENGINE=basic     Força o menu de texto (redimensionamento ao vivo)
+  RPG_FORCE_COLOR=1       Força as cores ANSI do menu de texto
+  NO_COLOR=1              Desativa as cores
+
+ResPinGuy Oficial [r]"
+
+L_USAGE="Uso: respinguy [--build|--config|--deps|--lang|--help]"
