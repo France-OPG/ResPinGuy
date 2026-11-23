@@ -11,7 +11,9 @@ Les entrées les plus récentes sont en haut.
   dépendances, mise à jour, suppression, aide.
 - Interface adaptative : la hauteur et la largeur des écrans sont recalculées
   à chaque affichage, y compris après un redimensionnement du terminal.
-- Palette de l'interface : `#1d2f52`, `#73ba25`, `#ee0000`, `#ffb516`.
+- Palette de l'interface :
+  fond vert `#73ba25`, texte blanc, marque « ResPinGuy » en jaune `#ffb516`
+  (en haut à droite), sélection bleu nuit `#1d2f52`, cadre rouge `#ee0000`.
   Thème whiptail (couleurs terminal approchantes) et équivalent ANSI truecolor
   exact pour le menu texte.
 - Thème « danger » (rouge) pour les actions destructives et les erreurs.
