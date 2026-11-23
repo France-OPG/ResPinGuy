@@ -46,20 +46,21 @@ fi
 
 # Themes whiptail via NEWT_COLORS.
 # newt n'accepte que les couleurs du terminal, pas le code hex :
-# fond noir, texte jaune, cadre bleu, selection/boutons jaune sur bleu.
+# fond noir, texte jaune, cadre bleu ; selection jaune sur vert,
+# boutons jaune sur rouge.
 RPG_NEWT_NORMAL='root=yellow,black
 window=yellow,black
 border=blue,black
 title=yellow,black
-button=yellow,blue
-actbutton=yellow,blue
-compactbutton=yellow,blue
+button=yellow,red
+actbutton=yellow,red
+compactbutton=yellow,red
 entry=yellow,blue
 label=yellow,black
 listbox=yellow,black
 actlistbox=yellow,black
-sellistbox=yellow,blue
-actsellistbox=yellow,blue
+sellistbox=yellow,green
+actsellistbox=yellow,green
 textbox=yellow,black
 acttextbox=yellow,black
 helpline=yellow,black
@@ -70,15 +71,15 @@ RPG_NEWT_DANGER='root=yellow,black
 window=yellow,black
 border=red,black
 title=yellow,black
-button=yellow,blue
-actbutton=yellow,blue
-compactbutton=yellow,blue
+button=yellow,red
+actbutton=yellow,red
+compactbutton=yellow,red
 entry=yellow,blue
 label=yellow,black
 listbox=yellow,black
 actlistbox=yellow,black
-sellistbox=yellow,blue
-actsellistbox=yellow,blue
+sellistbox=yellow,green
+actsellistbox=yellow,green
 textbox=yellow,black
 acttextbox=yellow,black
 helpline=yellow,black
