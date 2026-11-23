@@ -3,7 +3,4 @@ allow_only_root() {
   if [ "0$UID" -ne 0 ]; then echo "Merci d'être en root pour lancer : $(basename $0)"; exit 1; fi
 }
 allow_only_root
-nano /usr/share/ResPinGuy-File-Config/respinguy-config
-clear
-ls /usr/share/ResPinGuy-File-Config/
-echo "Voici tous les fichiers modifiables | original-save/ est une sauvegarde de la config originale"
+exec bash /usr/share/ResPinGuy-File/respinguy --config

@@ -1,20 +1,913 @@
 #!/bin/bash
+#_____________________________________________________________________________________________
+# ResPinGuy - The Kompiler
+# Interface texte (TUI) : accueil, build, configuration, dependances,
+# mise a jour et suppression.
+#
+# Emplacement : /usr/share/ResPinGuy-File/respinguy
+# Lancee par  : respinguy / respinguy --build / --config / --deps / --help
+#
+# Moteur d'affichage : whiptail, sinon dialog, sinon menu texte simple.
+# Aucune dependance supplementaire n'est obligatoire.
+#_____________________________________________________________________________________________
+
+RPG_FILE_DIR="/usr/share/ResPinGuy-File"
+RPG_CONF_DIR="/usr/share/ResPinGuy-File-Config"
+RPG_CONF="$RPG_CONF_DIR/respinguy-config"
+RPG_LOCAL="$RPG_CONF_DIR/respinguy-config.local"
+RPG_BACKTITLE="ResPinGuy - The Kompiler"
+
+UI_H=24
+UI_W=78
+UI_LIST=10
+
+RPG_UI="basic"
+DEPS_STATE="?"
+
+DISTRO_NAME="inconnue"
+if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    DISTRO_NAME="${PRETTY_NAME:-${NAME:-inconnue}}"
+fi
+
+# Etat de la configuration (recharge a chaque passage dans les menus)
+CFG_NAME=""
+CFG_OUT=""
+CFG_MODE="none"
+CFG_HOME=""
+CFG_KERNEL=""
+CFG_ARCH=""
+CFG_VMLINUZ=""
+CFG_ROOTDIR=""
+CFG_KVER_FORCED=0
+CFG_KVML_FORCED=0
+CFG_ROOTDIR_SET=0
+
+DEFAULT_ROOTDIR="bin boot etc home lib lib64 opt root sbin srv usr var"
+
+
+#_____________________________________________________________________________________________
+# Verification des droits
+
 allow_only_root() {
-  if [ "0$UID" -ne 0 ]; then echo "Merci d'être en root pour lancer : $(basename $0)"; exit 1; fi
+    if [ "0$UID" -ne 0 ]; then
+        echo "Merci d'etre en root pour lancer : $(basename "$0")"
+        exit 1
+    fi
 }
 allow_only_root
-echo "ResPinGuy - Créer des images ISO de son système Linux"
-echo "."
-echo "- - -"
-echo "."
-echo "Commandes disponibles :"
-echo "."
-echo "  Aide                         : respinguy"
-echo "  Configuration                : respinguy-config"
-echo "  Créer une image ISO          : respinguy-build"
-echo "  Mise à jour de ResPinGuy     : respinguy-app-up"
-echo "  Supprimer ResPinGuy          : respinguy-app-rm"
-echo "  Vérifier les dépendances     : respinguy-app-dep"
-echo "  Forcer install dépendances   : respinguy-app-dep-force-install"
-echo "."
-echo "ResPinGuy Officiel [®©]"
+
+#_____________________________________________________________________________________________
+# Detection du moteur d'interface
+
+ui_is_tty() {
+    [ -t 0 ] && [ -t 1 ]
+}
+
+detect_ui() {
+    if ! ui_is_tty || [ -z "${TERM-}" ]; then
+        RPG_UI="basic"
+        return
+    fi
+    if command -v whiptail >/dev/null 2>&1; then
+        RPG_UI="whiptail"
+    elif command -v dialog >/dev/null 2>&1; then
+        RPG_UI="dialog"
+    else
+        RPG_UI="basic"
+    fi
+}
+
+#_____________________________________________________________________________________________
+# Couche d'affichage : whiptail / dialog
+
+ui_menu() {
+    local title="$1"
+    local prompt="$2"
+    shift 2
+    if [ "$RPG_UI" = "basic" ]; then
+        basic_menu "$title" "$prompt" "$@"
+        return
+    fi
+    "$RPG_UI" --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --cancel-button "${UI_CANCEL:-Retour}" --ok-button "Valider" \
+        --menu "$prompt" "$UI_H" "$UI_W" "$UI_LIST" "$@" 3>&1 1>&2 2>&3
+}
+
+ui_input() {
+    local title="$1"
+    local prompt="$2"
+    local def="${3-}"
+    if [ "$RPG_UI" = "basic" ]; then
+        basic_input "$title" "$prompt" "$def"
+        return
+    fi
+    "$RPG_UI" --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --cancel-button "Annuler" --ok-button "Valider" \
+        --inputbox "$prompt" 12 "$UI_W" "$def" 3>&1 1>&2 2>&3
+}
+
+ui_yesno() {
+    local title="$1"
+    local text="$2"
+    if [ "$RPG_UI" = "basic" ]; then
+        basic_yesno "$title" "$text"
+        return
+    fi
+    "$RPG_UI" --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --yes-button "Oui" --no-button "Non" \
+        --yesno "$text" 18 "$UI_W"
+}
+
+ui_msg() {
+    local title="$1"
+    local text="$2"
+    if [ "$RPG_UI" = "basic" ]; then
+        basic_msg "$title" "$text"
+        return
+    fi
+    "$RPG_UI" --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --ok-button "OK" --msgbox "$text" 18 "$UI_W"
+}
+
+ui_text() {
+    local title="$1"
+    local text="$2"
+    local tmp
+    if [ "$RPG_UI" = "basic" ]; then
+        basic_text "$title" "$text"
+        return
+    fi
+    tmp=$(mktemp "${TMPDIR:-/tmp}/rpg-ui.XXXXXX") || return 1
+    printf '%s\n' "$text" > "$tmp"
+    "$RPG_UI" --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --ok-button "Fermer" --textbox "$tmp" "$UI_H" "$UI_W"
+    local rc=$?
+    rm -f "$tmp"
+    return $rc
+}
+
+#_____________________________________________________________________________________________
+# Couche d'affichage : menu texte simple (fallback)
+# Tout l'affichage part sur stderr pour que la valeur choisie reste sur stdout.
+
+basic_menu() {
+    local title="$1"
+    local prompt="$2"
+    shift 2
+    local -a tags=()
+    local -a labels=()
+    local i n
+    while [ $# -ge 2 ]; do
+        tags+=("$1")
+        labels+=("$2")
+        shift 2
+    done
+    while :; do
+        {
+            clear
+            printf '=== %s ===\n' "$title"
+            printf '%s\n\n' "$prompt"
+            for ((i = 0; i < ${#tags[@]}; i++)); do
+                printf '  %2d) %s\n' "$((i + 1))" "${labels[$i]}"
+            done
+            printf '\n   q) Quitter / Retour\n\n'
+        } >&2
+        printf 'Votre choix : ' >&2
+        read -r n || return 1
+        case "$n" in
+            q|Q) return 1 ;;
+        esac
+        if [[ "$n" =~ ^[0-9]+$ ]] && [ "$n" -ge 1 ] && [ "$n" -le ${#tags[@]} ]; then
+            printf '%s' "${tags[$((n - 1))]}"
+            return 0
+        fi
+    done
+}
+
+basic_input() {
+    local title="$1"
+    local prompt="$2"
+    local def="${3-}"
+    local v
+    {
+        printf '=== %s ===\n' "$title"
+        printf '%s\n' "$prompt"
+        [ -n "$def" ] && printf 'Valeur actuelle : %s\n' "$def"
+        printf '\n(Entree = garder la valeur actuelle, "-" = vider)\n'
+        printf '> '
+    } >&2
+    read -r v || return 1
+    if [ -z "$v" ]; then
+        v="$def"
+    elif [ "$v" = "-" ]; then
+        v=""
+    fi
+    printf '%s' "$v"
+}
+
+basic_yesno() {
+    local title="$1"
+    local text="$2"
+    local r
+    {
+        printf '=== %s ===\n' "$title"
+        printf '%s\n\n' "$text"
+        printf '[o/N] '
+    } >&2
+    read -r r || return 1
+    case "$r" in
+        o|O|y|Y|oui|Oui|OUI|yes|Yes|YES) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+basic_msg() {
+    local title="$1"
+    local text="$2"
+    {
+        printf '=== %s ===\n' "$title"
+        printf '%s\n\n' "$text"
+        printf 'Appuyez sur Entree pour continuer...'
+    } >&2
+    read -r _ || true
+}
+
+basic_text() {
+    local title="$1"
+    local text="$2"
+    {
+        printf '=== %s ===\n\n' "$title"
+        printf '%s\n\n' "$text"
+        printf 'Appuyez sur Entree pour continuer...'
+    } >&2
+    read -r _ || true
+}
+
+#_____________________________________________________________________________________________
+# Lecture de la configuration
+
+rpg_load_effective() {
+    local -a c=()
+    mapfile -t c < <(
+        set +e
+        . "$RPG_CONF" >/dev/null 2>&1
+        printf '%s\n' \
+            "${RPGBUILDNAME-}" \
+            "${RPGHOME-}" \
+            "${KERNEL-}" \
+            "${ARCH-}" \
+            "${VMLINUZ-}" \
+            "${RPGCONFIGUSER-}" \
+            "${RPGCONFIGUSERPERS-}" \
+            "${HOME-}" \
+            "${ROOTDIR-}"
+    )
+
+    CFG_NAME="${c[0]-}"
+    CFG_OUT="${c[1]-}"
+    CFG_KERNEL="${c[2]-}"
+    CFG_ARCH="${c[3]-}"
+    CFG_VMLINUZ="${c[4]-}"
+    CFG_HOME="${c[7]-}"
+    CFG_ROOTDIR="${c[8]-}"
+
+    if [ -n "${c[6]-}" ]; then
+        CFG_MODE="pers"
+    elif [ -n "${c[5]-}" ]; then
+        CFG_MODE="iso"
+    else
+        CFG_MODE="none"
+    fi
+
+    # Sans mode home, $HOME est celui du root courant : on ne l'affiche pas.
+    if [ "$CFG_MODE" = "none" ]; then
+        CFG_HOME=""
+    fi
+
+    CFG_KVER_FORCED=0
+    CFG_KVML_FORCED=0
+    CFG_ROOTDIR_SET=0
+    if [ -f "$RPG_LOCAL" ]; then
+        grep -q '^KERNEL=' "$RPG_LOCAL" 2>/dev/null && CFG_KVER_FORCED=1
+        grep -q '^VMLINUZ=' "$RPG_LOCAL" 2>/dev/null && CFG_KVML_FORCED=1
+        grep -q '^ROOTDIR=' "$RPG_LOCAL" 2>/dev/null && CFG_ROOTDIR_SET=1
+    fi
+}
+
+# Echec de la lecture : retourne 1 si la configuration n'a pas pu etre chargee
+# (kernel introuvable par exemple).
+rpg_conf_ok() {
+    [ -n "$CFG_NAME" ] && [ -n "$CFG_OUT" ] && [ -n "$CFG_VMLINUZ" ]
+}
+
+#_____________________________________________________________________________________________
+# Ecriture de respinguy-config.local
+
+rpg_shq() {
+    printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
+}
+
+rpg_save_local() {
+    local tmp="$RPG_LOCAL.tmp"
+    {
+        echo "# ResPinGuy - reglages de l'interface"
+        echo "# Genere automatiquement le $(date '+%d/%m/%Y %H:%M')"
+        echo "# Ce fichier est prioritaire sur respinguy-config."
+        echo "# Le supprimer (menu Configuration > Reinitialiser) retablit les defauts."
+        echo
+        [ -n "$CFG_NAME" ] && echo "RPGBUILDNAME=$(rpg_shq "$CFG_NAME")"
+        [ -n "$CFG_OUT" ] && echo "RPGHOME=$(rpg_shq "$CFG_OUT")"
+        case "$CFG_MODE" in
+            iso) echo "RPGCONFIGUSER=1" ;;
+            pers) echo "RPGCONFIGUSERPERS=1" ;;
+        esac
+        if [ "$CFG_MODE" != "none" ] && [ -n "$CFG_HOME" ]; then
+            echo "HOME=$(rpg_shq "$CFG_HOME")"
+        fi
+        if [ "$CFG_KVER_FORCED" -eq 1 ] && [ -n "$CFG_KERNEL" ]; then
+            echo "KERNEL=$(rpg_shq "$CFG_KERNEL")"
+        fi
+        if [ "$CFG_KVML_FORCED" -eq 1 ] && [ -n "$CFG_VMLINUZ" ]; then
+            echo "VMLINUZ=$(rpg_shq "$CFG_VMLINUZ")"
+        fi
+        if [ "$CFG_ROOTDIR_SET" -eq 1 ] && [ -n "$CFG_ROOTDIR" ]; then
+            echo "ROOTDIR=$(rpg_shq "$CFG_ROOTDIR")"
+        fi
+        true
+    } > "$tmp" || {
+        rm -f "$tmp"
+        return 1
+    }
+    if ! bash -n "$tmp" 2>/dev/null; then
+        rm -f "$tmp"
+        return 1
+    fi
+    mv -f "$tmp" "$RPG_LOCAL"
+}
+
+rpg_reset_local() {
+    rm -f "$RPG_LOCAL"
+}
+
+#_____________________________________________________________________________________________
+# Validation des valeurs
+
+rpg_check_name() {
+    local n="$1"
+    [ -n "$n" ] || return 1
+    case "$n" in
+        */*|*\\*) return 1 ;;
+    esac
+    return 0
+}
+
+# Le build fait "rm -rf $RPGHOME" : on interdit les dossiers systeme.
+rpg_check_outdir() {
+    local d="$1"
+    [ -n "$d" ] || return 1
+    case "$d" in
+        /*) ;;
+        *) return 1 ;;
+    esac
+    case "/$d/" in
+        */../*) return 1 ;;
+    esac
+    case "$d" in
+        /|/bin|/boot|/dev|/etc|/home|/lib|/lib64|/opt|/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var|/mnt|/media)
+            return 1 ;;
+        /bin/*|/boot/*|/dev/*|/etc/*|/lib/*|/lib64/*|/proc/*|/run/*|/sbin/*|/sys/*|/usr/*)
+            return 1 ;;
+    esac
+    return 0
+}
+
+rpg_derive_kver() {
+    local base
+    base=$(basename "$1")
+    case "$base" in
+        vmlinuz-*) printf '%s' "${base#vmlinuz-}" ;;
+        kernel-*)  printf '%s' "${base#kernel-}" ;;
+        vmlinuz)   printf '%s' "$(uname -r)" ;;
+    esac
+}
+
+rpg_mode_label() {
+    case "$CFG_MODE" in
+        iso)  printf '%s' "inclus dans l'ISO (sans persistance)" ;;
+        pers) printf '%s' "inclus dans l'ISO + persistance" ;;
+        *)    printf '%s' "aucun" ;;
+    esac
+}
+
+rpg_deps_label() {
+    case "$DEPS_STATE" in
+        OK) printf '%s' "toutes installees" ;;
+        KO) printf '%s' "manquantes" ;;
+        *)  printf '%s' "non verifiees" ;;
+    esac
+}
+
+#_____________________________________________________________________________________________
+# Compatibilite : une ancienne configuration ne charge pas respinguy-config.local
+
+rpg_ensure_compat() {
+    [ -f "$RPG_CONF" ] || return 0
+    grep -q 'respinguy-config.local' "$RPG_CONF" 2>/dev/null && return 0
+
+    if ui_yesno "Configuration ancienne" "Votre fichier respinguy-config ne prend pas encore
+en charge les reglages enregistres par l'interface.
+
+Ajouter cette prise en charge maintenant ?
+
+Votre configuration actuelle est conservee, rien n'est ecrase."; then
+        {
+            printf '\n# --- Reglages enregistres par l interface ResPinGuy ---\n'
+            printf '[ -f "%s" ] && . "%s"\n' "$RPG_LOCAL" "$RPG_LOCAL"
+        } >> "$RPG_CONF"
+        ui_msg "Configuration" "Prise en charge ajoutee.
+L'interface peut maintenant enregistrer vos reglages."
+    else
+        ui_msg "Configuration" "Sans cette modification, les reglages choisis
+dans l'interface ne seront pas appliques au build."
+    fi
+}
+
+#_____________________________________________________________________________________________
+# Etat affiche dans les menus
+
+rpg_status_main() {
+    printf 'Systeme : %s\n' "${DISTRO_NAME:0:60}"
+    printf 'Kernel  : %s (%s)\n' "${CFG_KERNEL:-inconnu}" "${CFG_ARCH:-?}"
+    printf 'Depend. : %s\n' "$(rpg_deps_label)"
+    printf 'ISO     : %s\n' "${CFG_NAME:-?}"
+    printf 'Sortie  : %s\n' "${CFG_OUT:-?}"
+    printf 'Home    : %s\n' "$(rpg_mode_label)"
+    printf '\nQue voulez-vous faire ?'
+}
+
+rpg_status_config() {
+    local k
+    if [ "$CFG_KVER_FORCED" -eq 1 ] || [ "$CFG_KVML_FORCED" -eq 1 ]; then
+        k="force : ${CFG_KERNEL:-?} / ${CFG_VMLINUZ:-?}"
+    else
+        k="automatique : ${CFG_KERNEL:-?}"
+    fi
+    printf 'Nom    : %s\n' "${CFG_NAME:-?}"
+    printf 'Sortie : %s\n' "${CFG_OUT:-?}"
+    printf 'Home   : %s\n' "$(rpg_mode_label)"
+    printf 'Kernel : %s\n' "$k"
+    printf 'Dossiers : %s\n' "${CFG_ROOTDIR:-?}"
+    printf '\nChoisissez un reglage a modifier.'
+}
+
+#_____________________________________________________________________________________________
+# Verification des dependances
+
+rpg_deps_state() {
+    if bash "$RPG_FILE_DIR/respinguy-app-dep" >/dev/null 2>&1; then
+        DEPS_STATE="OK"
+    else
+        DEPS_STATE="KO"
+    fi
+}
+
+#_____________________________________________________________________________________________
+# Action : creer l'image ISO
+
+action_build() {
+    rpg_load_effective
+    rpg_deps_state
+    if ! rpg_conf_ok; then
+        ui_msg "Build impossible" "La configuration est incomplete.
+
+Verifiez le kernel et le nom de l'image dans Configuration.
+Vous pouvez aussi lancer : respinguy-app-dep"
+        return
+    fi
+
+    if [ "$DEPS_STATE" != "OK" ]; then
+        ui_yesno "Build" "Des dependances semblent manquantes.
+
+Il est conseille de les verifier avant de lancer le build.
+
+Continuer quand meme ?" || return
+    fi
+
+    ui_yesno "Creer l'image ISO" "Resume du build
+
+Nom de l'image  : $CFG_NAME
+Kernel          : $CFG_VMLINUZ
+Version kernel  : $CFG_KERNEL
+Architecture    : $CFG_ARCH
+Dossiers        : $CFG_ROOTDIR
+Home utilisateur: $(rpg_mode_label)
+
+ISO de sortie   : $CFG_OUT/$CFG_NAME-$CFG_ARCH.iso
+Dossier de build: /respinguy-build-dir/
+
+Lancer la creation ?" || return
+
+    clear
+    bash "$RPG_FILE_DIR/respinguy-build"
+    local rc=$?
+    if [ $rc -eq 0 ]; then
+        ui_msg "Build termine" "Image ISO creee :
+
+$CFG_OUT/$CFG_NAME-$CFG_ARCH.iso"
+    else
+        ui_msg "Build interrompu" "Le build s'est arrete avec le code $rc.
+
+Consultez les messages affiches dans le terminal."
+    fi
+}
+
+#_____________________________________________________________________________________________
+# Action : configuration
+
+config_home() {
+    local choice v
+    while :; do
+        rpg_load_effective
+        choice=$(ui_menu "Configuration - Home utilisateur" "$(rpg_status_config)" \
+            none "Ne pas inclure de home" \
+            iso  "Inclure le home dans l'ISO" \
+            pers "Inclure le home + persistance" \
+            path "Modifier le chemin du home" \
+            back "Retour") || return
+        case "$choice" in
+            none)
+                CFG_MODE="none"
+                CFG_HOME=""
+                rpg_save_local && ui_msg "Home" "Aucun home ne sera inclus." ;;
+            iso|pers)
+                if [ -z "$CFG_HOME" ] || [ ! -d "$CFG_HOME" ]; then
+                    v=$(ui_input "Home utilisateur" "Chemin du home a inclure (chemin absolu) :" "$CFG_HOME") || continue
+                    if [ ! -d "$v" ]; then
+                        ui_msg "Home" "Dossier introuvable :
+
+$v"
+                        continue
+                    fi
+                    CFG_HOME="$v"
+                fi
+                CFG_MODE="$choice"
+                if [ "$choice" = "iso" ]; then
+                    rpg_save_local && ui_msg "Home" "Le home sera inclus dans l'ISO uniquement.
+
+Les fichiers sont copies dans /etc/skel pendant le build,
+puis /etc/skel est restaure a la fin."
+                else
+                    rpg_save_local && ui_msg "Home" "Le home sera inclus dans l'ISO avec persistance.
+
+Les fichiers sont copies dans /etc/skel et y restent,
+y compris pour le systeme installe depuis l'ISO."
+                fi ;;
+            path)
+                v=$(ui_input "Home utilisateur" "Chemin du home a inclure (chemin absolu) :" "$CFG_HOME") || continue
+                if [ -z "$v" ]; then
+                    continue
+                fi
+                if [ ! -d "$v" ]; then
+                    ui_msg "Home" "Dossier introuvable :
+
+$v"
+                    continue
+                fi
+                CFG_HOME="$v"
+                if [ "$CFG_MODE" = "none" ]; then
+                    rpg_save_local && ui_msg "Home" "Chemin enregistre :
+
+$CFG_HOME
+
+Aucun home n'est inclus pour l'instant.
+Choisissez \"Inclure le home dans l'ISO\" ou
+\"Inclure le home + persistance\" pour l'activer."
+                else
+                    rpg_save_local && ui_msg "Home" "Chemin enregistre :
+
+$CFG_HOME"
+                fi ;;
+            *) return ;;
+        esac
+    done
+}
+
+config_kernel() {
+    local choice v d
+    while :; do
+        rpg_load_effective
+        choice=$(ui_menu "Configuration - Kernel" "$(rpg_status_config)" \
+            ver  "Version du kernel" \
+            path "Chemin du vmlinuz" \
+            auto "Detection automatique" \
+            back "Retour") || return
+        case "$choice" in
+            ver)
+                v=$(ui_input "Version du kernel" "Version utilisee par dracut (--kver) :" "$CFG_KERNEL") || continue
+                CFG_KERNEL="$v"
+                if [ -z "$v" ]; then
+                    CFG_KVER_FORCED=0
+                    rpg_save_local && ui_msg "Kernel" "Version vide : detection automatique conservee."
+                else
+                    CFG_KVER_FORCED=1
+                    rpg_save_local && ui_msg "Kernel" "Version enregistree :
+
+$CFG_KERNEL"
+                fi ;;
+            path)
+                v=$(ui_input "Chemin du vmlinuz" "Chemin absolu du kernel :" "$CFG_VMLINUZ") || continue
+                if [ ! -f "$v" ]; then
+                    ui_msg "Kernel" "Fichier introuvable :
+
+$v"
+                    continue
+                fi
+                CFG_VMLINUZ="$v"
+                CFG_KVML_FORCED=1
+                if [ "$CFG_KVER_FORCED" -eq 0 ] || [ -z "$CFG_KERNEL" ]; then
+                    d=$(rpg_derive_kver "$v")
+                    if [ -n "$d" ]; then
+                        CFG_KERNEL="$d"
+                        CFG_KVER_FORCED=1
+                    fi
+                fi
+                rpg_save_local && ui_msg "Kernel" "Kernel enregistre :
+
+$CFG_VMLINUZ
+Version : ${CFG_KERNEL:-?}" ;;
+            auto)
+                CFG_KERNEL=""
+                CFG_VMLINUZ=""
+                CFG_KVER_FORCED=0
+                CFG_KVML_FORCED=0
+                rpg_save_local && ui_msg "Kernel" "Detection automatique retablie.
+
+Le kernel sera detecte a chaque build." ;;
+            *) return ;;
+        esac
+    done
+}
+
+action_config() {
+    local choice v
+    UI_CANCEL="Retour"
+    while :; do
+        rpg_load_effective
+        if ! rpg_conf_ok; then
+            if ui_yesno "Configuration" "La configuration n'a pas pu etre chargee.
+
+Le kernel n'a probablement pas ete detecte.
+Lancez respinguy-app-dep puis verifiez le kernel.
+
+Ouvrir le fichier de configuration dans nano ?"; then
+                clear
+                nano "$RPG_CONF"
+            fi
+            return
+        fi
+        choice=$(ui_menu "Configuration" "$(rpg_status_config)" \
+            name    "Nom de l'image ISO" \
+            outdir  "Dossier de sortie" \
+            home    "Home utilisateur" \
+            kernel  "Kernel / vmlinuz" \
+            rootdir "Dossiers inclus dans l'ISO" \
+            edit    "Editer les reglages (nano)" \
+            reset   "Reinitialiser les reglages" \
+            back    "Retour") || return
+
+        case "$choice" in
+            name)
+                v=$(ui_input "Nom de l'image" "Nom de base de l'ISO (sans extension) :" "$CFG_NAME") || continue
+                if ! rpg_check_name "$v"; then
+                    ui_msg "Nom invalide" "Le nom doit etre non vide et ne pas contenir de /."
+                    continue
+                fi
+                CFG_NAME="$v"
+                rpg_save_local && ui_msg "Nom" "Nom enregistre :
+
+$CFG_NAME" ;;
+            outdir)
+                v=$(ui_input "Dossier de sortie" "Dossier ou sera ecrite l'ISO (chemin absolu) :" "$CFG_OUT") || continue
+                if ! rpg_check_outdir "$v"; then
+                    ui_msg "Dossier invalide" "Ce dossier n'est pas autorise :
+
+$v
+
+Le build efface ce dossier avant de creer l'ISO.
+Choisissez un dossier dedie, par exemple :
+/home/ResPinGuy ou /tmp/ResPinGuy"
+                    continue
+                fi
+                mkdir -p "$v" 2>/dev/null
+                CFG_OUT="$v"
+                rpg_save_local && ui_msg "Dossier" "Dossier de sortie enregistre :
+
+$CFG_OUT" ;;
+            home)
+                config_home ;;
+            kernel)
+                config_kernel ;;
+            rootdir)
+                v=$(ui_input "Dossiers inclus" "Dossiers de / a inclure (separes par des espaces) :
+
+Ne pas mettre de / devant.
+proc, sys, tmp, run et dev sont exclus automatiquement." "$CFG_ROOTDIR") || continue
+                if [ -z "$v" ]; then
+                    ui_msg "Dossiers" "La liste ne peut pas etre vide."
+                    continue
+                fi
+                CFG_ROOTDIR="$v"
+                CFG_ROOTDIR_SET=1
+                rpg_save_local && ui_msg "Dossiers" "Liste enregistree." ;;
+            edit)
+                if [ ! -f "$RPG_LOCAL" ]; then
+                    rpg_save_local
+                fi
+                clear
+                nano "$RPG_LOCAL"
+                if bash -n "$RPG_LOCAL" 2>/tmp/rpg-local-err; then
+                    ui_msg "Editeur" "Fichier enregistre et valide."
+                else
+                    ui_text "Erreur de syntaxe" "$(cat /tmp/rpg-local-err)"
+                fi
+                rm -f /tmp/rpg-local-err ;;
+            reset)
+                if ui_yesno "Reinitialiser" "Supprimer tous les reglages enregistres par l'interface ?
+
+Le fichier respinguy-config reprendra ses valeurs par defaut."; then
+                    rpg_reset_local
+                    ui_msg "Reinitialiser" "Reglages de l'interface supprimes."
+                fi ;;
+            *) return ;;
+        esac
+    done
+}
+
+#_____________________________________________________________________________________________
+# Action : dependances
+
+action_deps() {
+    local out rc
+    out=$(bash "$RPG_FILE_DIR/respinguy-app-dep" 2>&1)
+    rc=$?
+    ui_text "Dependances" "$out"
+
+    if [ $rc -ne 0 ]; then
+        if ui_yesno "Dependances manquantes" "Certaines dependances sont absentes.
+
+Lancer l'installation automatique ?
+
+Le gestionnaire de paquets detecte sera utilise
+(apt, dnf, yum, pacman, zypper ou emerge)."; then
+            clear
+            bash "$RPG_FILE_DIR/respinguy-app-dep-force-install"
+            local rc2=$?
+            rpg_deps_state
+            if [ $rc2 -eq 0 ] && [ "$DEPS_STATE" = "OK" ]; then
+                ui_msg "Dependances" "Installation terminee.
+Toutes les dependances sont presentes."
+            else
+                ui_msg "Dependances" "Installation terminee, mais il reste des elements manquants.
+
+Relancez la verification ou installez-les manuellement."
+            fi
+        fi
+    fi
+    rpg_deps_state
+}
+
+#_____________________________________________________________________________________________
+# Action : mise a jour
+
+action_update() {
+    ui_yesno "Mise a jour" "ResPinGuy va etre telecharge depuis GitHub
+puis reinstaller ses commandes et ses fichiers.
+
+Votre configuration actuelle est conservee.
+
+Continuer ?" || return
+
+    clear
+    # exec : les fichiers de /usr/share/ResPinGuy-File sont remplaces pendant
+    # la mise a jour. Le script courant ne doit plus etre lu ensuite.
+    exec bash "$RPG_FILE_DIR/respinguy-app-up"
+}
+
+#_____________________________________________________________________________________________
+# Action : suppression
+
+action_remove() {
+    ui_yesno "Supprimer ResPinGuy" "ResPinGuy va etre retire de ce systeme.
+
+Les commandes, les fichiers et le dossier de build
+seront supprimes. Votre configuration sera perdue.
+
+Continuer ?" || return
+    ui_yesno "Confirmation" "Derniere confirmation.
+
+Supprimer definitivement ResPinGuy ?" || return
+
+    clear
+    # exec : app-rm supprime /usr/share/ResPinGuy-File, y compris ce script.
+    exec bash "$RPG_FILE_DIR/respinguy-app-rm"
+}
+
+#_____________________________________________________________________________________________
+# Action : aide
+
+action_help() {
+    ui_text "Aide" "ResPinGuy - The Kompiler
+Creer une image ISO de son systeme Linux.
+
+INTERFACE
+  respinguy               Ce menu
+  respinguy --build       Build direct
+  respinguy --config      Configuration directe
+  respinguy --deps        Verification des dependances
+
+COMMANDES CLASSIQUES
+  respinguy-build         Creer l'image ISO
+  respinguy-config        Modifier la configuration
+  respinguy-app-dep       Verifier les dependances
+  respinguy-app-dep-force-install
+                          Installer les dependances manquantes
+  respinguy-app-up        Mettre a jour ResPinGuy
+  respinguy-app-rm        Supprimer ResPinGuy
+
+FICHIERS
+  /usr/share/ResPinGuy-File-Config/respinguy-config
+                          Configuration par defaut
+  /usr/share/ResPinGuy-File-Config/respinguy-config.local
+                          Reglages enregistres par l'interface
+
+DOCUMENTATION
+  https://github.com/France-OPG/ResPinGuy
+
+ResPinGuy Officiel [r]"
+}
+
+#_____________________________________________________________________________________________
+# Menu principal
+
+main_menu() {
+    local choice
+    UI_CANCEL="Quitter"
+    while :; do
+        rpg_load_effective
+        choice=$(ui_menu "Accueil" "$(rpg_status_main)" \
+            build  "Creer l'image ISO" \
+            config "Configuration" \
+            deps   "Verifier les dependances" \
+            update "Mettre a jour ResPinGuy" \
+            remove "Supprimer ResPinGuy" \
+            help   "Aide" \
+            quit   "Quitter") || break
+
+        case "$choice" in
+            build)  action_build ;;
+            config) action_config ;;
+            deps)   action_deps ;;
+            update) action_update ;;
+            remove) action_remove ;;
+            help)   action_help ;;
+            *)      break ;;
+        esac
+    done
+    clear
+    exit 0
+}
+
+#_____________________________________________________________________________________________
+# Demarrage
+
+detect_ui
+
+if [ ! -f "$RPG_CONF" ]; then
+    ui_msg "ResPinGuy" "Fichier de configuration absent :
+
+$RPG_CONF
+
+Reinstallez ResPinGuy."
+    exit 1
+fi
+
+case "${1-}" in
+    --help|-h)
+        action_help
+        exit 0 ;;
+esac
+
+rpg_ensure_compat
+rpg_deps_state
+rpg_load_effective
+
+case "${1-}" in
+    --build)  action_build ;;
+    --config) action_config ;;
+    --deps)   action_deps ;;
+    "") main_menu ;;
+    *)
+        echo "Usage : respinguy [--build|--config|--deps|--help]"
+        exit 2 ;;
+esac

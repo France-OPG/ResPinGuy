@@ -15,6 +15,38 @@
 - xorriso
 
 
+### Interface interactive
+
+La commande `respinguy` ouvre un menu plein écran :
+
+```bash
+sudo respinguy
+```
+
+Actions disponibles :
+- Créer l'image ISO (avec un résumé avant lancement)
+- Configuration (nom, dossier de sortie, home, kernel, dossiers inclus)
+- Vérification et installation des dépendances
+- Mise à jour et suppression de ResPinGuy
+
+Accès direct à une page :
+
+```bash
+sudo respinguy --build
+sudo respinguy --config
+sudo respinguy --deps
+sudo respinguy --help
+```
+
+L'interface utilise `whiptail` (ou `dialog`) lorsqu'il est disponible,
+sinon un menu texte simple. Aucune dépendance supplémentaire n'est obligatoire.
+
+Les réglages choisis dans l'interface sont enregistrés dans
+`/usr/share/ResPinGuy-File-Config/respinguy-config.local`.
+Ce fichier est prioritaire sur `respinguy-config` et peut être supprimé
+pour revenir aux valeurs par défaut (menu Configuration > Réinitialiser).
+
+
 ### (Version sudo) Liste des commandes avec leurs fonction :
 
 Liste des commandes avec leurs fonction :

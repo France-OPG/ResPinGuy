@@ -1,0 +1,19 @@
+# Forcer les fins de ligne LF : projet Linux, developpe sous Windows.
+* text=auto eol=lf
+
+# Binaires
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.iso binary
+*.img binary
+*.bin binary
+*.c32 binary
+*.efi binary
+*.zip binary
+*.gz binary
+*.xz binary
+*.tar binary
+*.7z binary
