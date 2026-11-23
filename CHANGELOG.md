@@ -12,11 +12,14 @@ Les entrées les plus récentes sont en haut.
 - Interface adaptative : la hauteur et la largeur des écrans sont recalculées
   à chaque affichage, y compris après un redimensionnement du terminal.
 - Palette de l'interface :
-  fond jaune `#ffb516`, texte vert `#73ba25`, marque « ResPinGuy » en vert
-  (en haut à droite), sélection blanche sur bleu nuit `#1d2f52`, cadre rouge
-  `#ee0000`.
+  fond noir, texte jaune `#ffb516`, cadre bleu `#1d2f52`, sélection verte
+  `#73ba25`, boutons et actions secondaires rouges `#ee0000`.
+  « ResPinGuy » est affiché à gauche.
   Thème whiptail (couleurs terminal approchantes) et équivalent ANSI truecolor
   exact pour le menu texte.
+- Redimensionnement : le menu texte détecte la taille toutes les 250 ms et se
+  redessine immédiatement. Les écrans whiptail reprennent la nouvelle taille
+  au prochain écran (limite de newt). `RPG_UI_ENGINE=basic` force le menu texte.
 - Thème « danger » (rouge) pour les actions destructives et les erreurs.
 - Accès direct : `respinguy --build`, `--config`, `--deps`, `--help`.
 - Moteur d'affichage : `whiptail`, sinon `dialog`, sinon menu texte simple
