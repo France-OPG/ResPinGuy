@@ -27,6 +27,13 @@ Les entrées les plus récentes sont en haut.
 - Thème « danger » (rouge) pour les actions destructives et les erreurs.
 - Souris dans le menu texte : clic gauche pour sélectionner une entrée, clic
   sur `q)` pour revenir. Désactivable avec `RPG_NO_MOUSE=1`.
+- ISO hybrides **BIOS + UEFI** (GRUB EFI) quand les outils UEFI sont présents.
+- Démarrage par **label ISO** (`root=live:CDLABEL=...`) : CD/DVD et clé USB,
+  sans dépendre de `/dev/sr0`.
+- Réglages de compatibilité live : `selinux=0`, `apparmor=0`, overlayfs,
+  `/etc/crypttab` neutralisé.
+- Détection des outils UEFI (`grub-mkstandalone`/`grub2-mkstandalone`,
+  `dosfstools`, `mtools`) avec repli BIOS s'ils sont absents.
 - Accès direct : `respinguy --build`, `--config`, `--deps`, `--help`.
 - Moteur d'affichage : `whiptail`, sinon `dialog`, sinon menu texte simple
   (aucune nouvelle dépendance obligatoire).
@@ -38,6 +45,8 @@ Les entrées les plus récentes sont en haut.
 - Section « Interface interactive » dans la documentation.
 
 ### Modifié
+- `respinguy-build` : menus BIOS et UEFI générés avec le label ISO ; xorriso
+  produit une image hybride (El Torito EFI + GPT) quand l'UEFI est disponible.
 - Accueil simplifié : dépendances, mise à jour, suppression, langue et aide
   sont regroupées dans un sous-menu « Paramètres et info ».
 - `ResPinGuy-File/respinguy` : la simple liste d'aide est remplacée par la TUI.
@@ -51,6 +60,10 @@ Les entrées les plus récentes sont en haut.
 - `ResPinGuy-File/respinguy-app-up` : supprime `/tmp/ResPinGuy` avant le clone.
 
 ### Corrigé
+- Le dossier `/etc` du live était injecté depuis un dossier temporaire dont le
+  nom n'était pas `etc` : le squashfs n'avait donc pas de `/etc` et le live ne
+  pouvait pas démarrer. Le dossier temporaire est maintenant créé sous un chemin
+  se terminant par `/etc`.
 - `respinguy-config` éditait `respinguy-app-dep-force-install` au lieu du
   fichier de configuration.
 - `respinguy-app-dep-force-install` n'était pas installée dans `/usr/bin`.

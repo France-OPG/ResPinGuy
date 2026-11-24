@@ -39,6 +39,9 @@ install_pkg() {
                 dracut-live)    apt install -y dracut-live ;;
                 xorriso)        apt install -y xorriso ;;
                 isolinux)       apt install -y isolinux ;;
+                grub-efi)       apt install -y grub-efi-amd64-bin ;;
+                dosfstools)     apt install -y dosfstools ;;
+                mtools)         apt install -y mtools ;;
             esac ;;
         dnf|yum)
             case "$TOOL" in
@@ -51,6 +54,9 @@ install_pkg() {
                 dracut-live)    $PKG_MGR install -y dracut-live ;;
                 xorriso)        $PKG_MGR install -y xorriso ;;
                 isolinux)       $PKG_MGR install -y syslinux ;;
+                grub-efi)       $PKG_MGR install -y grub2-tools-extra grub2-efi-x64-modules ;;
+                dosfstools)     $PKG_MGR install -y dosfstools ;;
+                mtools)         $PKG_MGR install -y mtools ;;
             esac ;;
         pacman)
             case "$TOOL" in
@@ -63,6 +69,9 @@ install_pkg() {
                 dracut-live)    pacman -S --noconfirm dracut ;;
                 xorriso)        pacman -S --noconfirm libisoburn ;;
                 isolinux)       pacman -S --noconfirm syslinux ;;
+                grub-efi)       pacman -S --noconfirm grub ;;
+                dosfstools)     pacman -S --noconfirm dosfstools ;;
+                mtools)         pacman -S --noconfirm mtools ;;
             esac ;;
         zypper)
             case "$TOOL" in
@@ -75,6 +84,9 @@ install_pkg() {
                 dracut-live)    zypper install -y dracut ;;
                 xorriso)        zypper install -y xorriso ;;
                 isolinux)       zypper install -y syslinux ;;
+                grub-efi)       zypper install -y grub2-x86_64-efi ;;
+                dosfstools)     zypper install -y dosfstools ;;
+                mtools)         zypper install -y mtools ;;
             esac ;;
         emerge)
             case "$TOOL" in
@@ -87,6 +99,9 @@ install_pkg() {
                 dracut-live)    emerge sys-kernel/dracut ;;
                 xorriso)        emerge dev-libs/libisoburn ;;
                 isolinux)       emerge sys-boot/syslinux ;;
+                grub-efi)       emerge sys-boot/grub ;;
+                dosfstools)     emerge sys-fs/dosfstools ;;
+                mtools)         emerge sys-fs/mtools ;;
             esac ;;
         unknown)
             echo "[ERREUR] Gestionnaire de paquets non reconnu."
@@ -150,6 +165,20 @@ fi
 if [ ! "$(type -p xorriso)" ]; then
     echo "Installation de xorriso..."
     install_pkg xorriso && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
+fi
+
+# Outils UEFI (optionnels, necessaires pour une ISO hybride)
+if ! command -v grub-mkstandalone >/dev/null 2>&1 && ! command -v grub2-mkstandalone >/dev/null 2>&1; then
+    echo "Installation des outils GRUB EFI..."
+    install_pkg grub-efi && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
+fi
+if ! command -v mkfs.vfat >/dev/null 2>&1; then
+    echo "Installation de dosfstools..."
+    install_pkg dosfstools && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
+fi
+if ! command -v mcopy >/dev/null 2>&1; then
+    echo "Installation de mtools..."
+    install_pkg mtools && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
 fi
 
 #_____________________________________________________________________________________________

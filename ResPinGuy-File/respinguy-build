@@ -42,6 +42,35 @@ if [ -n "$RPGCONFIGUSER" ] && [ -n "$RPGCONFIGUSERPERS" ]; then
     echo "[ERREUR] RPGCONFIGUSER et RPGCONFIGUSERPERS ne peuvent pas être définis ensemble."; exit 1
 fi
 
+#_____________________________________________________________________________________________
+# Preparation du demarrage (BIOS + UEFI)
+
+# Label ISO : sert au demarrage (root=live:CDLABEL=...)
+ISOLABEL=$(printf '%s' "$RPGBUILDNAME" | tr '[:lower:]' '[:upper:]' | sed 's/[^A-Z0-9_]/_/g')
+ISOLABEL=${ISOLABEL:0:32}
+[ -n "$ISOLABEL" ] || ISOLABEL="RESPINGUY"
+
+# Arguments communs a tous les menus de demarrage
+BOOTARGS="root=live:CDLABEL=$ISOLABEL rd.live.image rd.live.dir=LiveOS rd.live.squashimg=squashfs.img rd.live.overlay.overlayfs=1 selinux=0 apparmor=0"
+MASKS="systemd.mask=rpcbind.service systemd.mask=rpcbind.socket systemd.mask=nftables.service systemd.mask=keyboard-setup.service systemd.mask=systemd-networkd-wait-online.service systemd.mask=NetworkManager-wait-online.service systemd.mask=systemd-firstboot.service systemd.mask=console-setup.service"
+
+# Detection des outils UEFI (facultatifs : repli BIOS si absents)
+RPG_UEFI=0
+GRUB_MKSTANDALONE=""
+GRUB_EFI_DIR=""
+if command -v grub-mkstandalone >/dev/null 2>&1; then
+    GRUB_MKSTANDALONE="grub-mkstandalone"
+elif command -v grub2-mkstandalone >/dev/null 2>&1; then
+    GRUB_MKSTANDALONE="grub2-mkstandalone"
+fi
+for d in /usr/lib/grub/x86_64-efi /usr/lib/grub2/x86_64-efi /usr/lib/grub/x86_64-efi-signed; do
+    if [ -d "$d" ]; then GRUB_EFI_DIR="$d"; break; fi
+done
+if [ -n "$GRUB_MKSTANDALONE" ] && [ -n "$GRUB_EFI_DIR" ] \
+   && command -v mkfs.vfat >/dev/null 2>&1 && command -v mcopy >/dev/null 2>&1; then
+    RPG_UEFI=1
+fi
+
 clear
 echo "_ _ _"
 echo "Résumé avant création"
@@ -53,11 +82,23 @@ echo "Architecture     : $ARCH"
 echo "Dossiers inclus  : $ROOTDIR"
 echo "ISO de sortie    : $RPGHOME"
 echo "Dossier de build : /respinguy-build-dir/"
+echo "Label ISO        : $ISOLABEL"
+if [ "$RPG_UEFI" -eq 1 ]; then
+    echo "Demarrage        : BIOS + UEFI"
+else
+    echo "Demarrage        : BIOS uniquement"
+fi
 if   [ -n "$RPGCONFIGUSER" ];     then echo "Home utilisateur : $HOME (ISO uniquement)"
 elif [ -n "$RPGCONFIGUSERPERS" ]; then echo "Home utilisateur : $HOME (ISO + persistance)"
 else                                   echo "Home utilisateur : non inclus"
 fi
 echo "_ _ _"
+if [ "$RPG_UEFI" -eq 0 ]; then
+    echo ""
+    echo "[ATTENTION] Outils UEFI manquants : l'ISO sera BIOS uniquement."
+    echo "            Installez grub-mkstandalone (ou grub2-mkstandalone),"
+    echo "            dosfstools (mkfs.vfat) et mtools (mcopy)."
+fi
 rm -rf /respinguy-build-dir/
 read -p "Appuyez sur Entrée pour lancer le build..."
 
@@ -68,7 +109,31 @@ mkdir -p /respinguy-build-dir/isolinux
 echo "Copie des fichiers ISO..."
 cp -r /usr/share/ResPinGuy-File/fichier/iso/isolinux/. /respinguy-build-dir/isolinux/
 cp /usr/share/ResPinGuy-File-Config/bootimg.png /respinguy-build-dir/isolinux/
-cp /usr/share/ResPinGuy-File-Config/isolinux.cfg /respinguy-build-dir/isolinux/
+
+# Menu BIOS genere avec le label de l'ISO
+cat > /respinguy-build-dir/isolinux/isolinux.cfg <<EOF
+ui menu.c32
+prompt 0
+menu title ResPinGuy
+timeout 30
+menu background /isolinux/bootimg.png
+
+label respinguy
+    menu label ResPinGuy - Live
+    menu default
+    linux /vmlinuz
+    append initrd=/initrd $BOOTARGS quiet $MASKS
+
+label respinguy-novga
+    menu label ResPinGuy - Live (no modeset)
+    linux /vmlinuz
+    append initrd=/initrd $BOOTARGS nomodeset $MASKS
+
+label respinguy-debug
+    menu label ResPinGuy - Live (debug)
+    linux /vmlinuz
+    append initrd=/initrd $BOOTARGS rd.debug rd.info $MASKS
+EOF
 
 if [ -n "$RPGHOME" ] && [ "$RPGHOME" != "/" ]; then
     rm -rf "$RPGHOME" && mkdir -p "$RPGHOME"
@@ -93,7 +158,9 @@ fi
 # Le système source n'est JAMAIS modifié.
 # mksquashfs reçoit le dossier /etc temporaire à la place du vrai /etc.
 echo "Préparation du /etc live (fstab)..."
-RPG_ETC_TMP=$(mktemp -d /tmp/rpg-etc.XXXXXX)
+RPG_ETC_ROOT=$(mktemp -d /tmp/rpg-live.XXXXXX)
+RPG_ETC_TMP="$RPG_ETC_ROOT/etc"
+mkdir -p "$RPG_ETC_TMP"
 cp -a /etc/. "$RPG_ETC_TMP/"
 
 cat > "$RPG_ETC_TMP/fstab" << 'FSTABEOF'
@@ -103,6 +170,12 @@ cat > "$RPG_ETC_TMP/fstab" << 'FSTABEOF'
 tmpfs   /tmp     tmpfs   defaults,noatime  0 0
 tmpfs   /run     tmpfs   defaults,noatime  0 0
 FSTABEOF
+
+# Neutralise le crypttab du systeme source (evite les demandes de mot de passe au boot)
+[ -f "$RPG_ETC_TMP/crypttab" ] && : > "$RPG_ETC_TMP/crypttab"
+
+# Evite de dupliquer l'identifiant machine de la source sur le reseau
+[ -f "$RPG_ETC_TMP/machine-id" ] && : > "$RPG_ETC_TMP/machine-id"
 
 echo "[OK] /etc live préparé dans $RPG_ETC_TMP"
 
@@ -240,7 +313,7 @@ done
 
 if [ -z "$SQSFDIR" ]; then
     echo "[ERREUR] Aucun dossier valide dans ROOTDIR."
-    rm -rf "$RPG_ETC_TMP"
+    rm -rf "$RPG_ETC_ROOT"
     exit 1
 fi
 
@@ -269,7 +342,7 @@ mksquashfs $SQSFDIR /respinguy-build-dir/LiveOS/squashfs.img \
     -e "lib/systemd/system/systemd-networkd-wait-online*"
 
 SQUASHFS_RESULT=$?
-rm -rf "$RPG_ETC_TMP"
+rm -rf "$RPG_ETC_ROOT"
 
 if [ $SQUASHFS_RESULT -ne 0 ]; then
     echo "[ERREUR] Échec de la création du squashfs."
@@ -292,14 +365,68 @@ echo "initrd créé : $(du -sh /respinguy-build-dir/initrd | cut -f1)"
 read -p "Appuyez sur Entrée pour continuer..."
 
 #_____________________________________________________________________________________________
+# Demarrage UEFI (GRUB)
+if [ "$RPG_UEFI" -eq 1 ]; then
+    echo "Préparation du démarrage UEFI..."
+    mkdir -p /respinguy-build-dir/boot
+    cat > /respinguy-build-dir/grub.cfg <<EOF
+set timeout=30
+set default=0
+
+search --no-floppy --label $ISOLABEL --set=root
+
+menuentry "ResPinGuy - Live" {
+    linux /vmlinuz $BOOTARGS quiet $MASKS
+    initrd /initrd
+}
+
+menuentry "ResPinGuy - Live (no modeset)" {
+    linux /vmlinuz $BOOTARGS nomodeset $MASKS
+    initrd /initrd
+}
+
+menuentry "ResPinGuy - Live (debug)" {
+    linux /vmlinuz $BOOTARGS rd.debug rd.info $MASKS
+    initrd /initrd
+}
+EOF
+
+    if "$GRUB_MKSTANDALONE" --directory="$GRUB_EFI_DIR" --format=x86_64-efi \
+        --output=/respinguy-build-dir/BOOTX64.EFI \
+        --modules="part_gpt part_msdos fat iso9660 normal linux configfile search search_label search_fs_uuid search_fs_file echo test true sleep reboot halt" \
+        "boot/grub/grub.cfg=/respinguy-build-dir/grub.cfg"; then
+        dd if=/dev/zero of=/respinguy-build-dir/boot/efi.img bs=1M count=32 2>/dev/null
+        if mkfs.vfat -F 16 -n EFIBOOT /respinguy-build-dir/boot/efi.img >/dev/null 2>&1 \
+           && mmd -i /respinguy-build-dir/boot/efi.img ::/EFI ::/EFI/BOOT \
+           && mcopy -i /respinguy-build-dir/boot/efi.img /respinguy-build-dir/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI; then
+            rm -f /respinguy-build-dir/BOOTX64.EFI /respinguy-build-dir/grub.cfg
+            echo "[OK] Démarrage UEFI prêt."
+        else
+            echo "[ATTENTION] Échec de la préparation de l'image EFI : ISO BIOS uniquement."
+            RPG_UEFI=0
+        fi
+    else
+        echo "[ATTENTION] Échec de grub-mkstandalone : ISO BIOS uniquement."
+        RPG_UEFI=0
+    fi
+fi
+
+read -p "Appuyez sur Entrée pour continuer..."
+
+#_____________________________________________________________________________________________
 echo "Création de l'image ISO..."
 cd / || exit 1
+XORRISO_UEFI=()
+if [ "$RPG_UEFI" -eq 1 ]; then
+    XORRISO_UEFI=(-eltorito-alt-boot -e boot/efi.img -no-emul-boot -isohybrid-gpt-basdat)
+fi
 xorriso -as mkisofs \
     -r -J -joliet-long -l -iso-level 3 -cache-inodes \
     -isohybrid-mbr /usr/share/ResPinGuy-File/fichier/isohdpfx.bin \
-    -partition_offset 16 -A "$RPGBUILDNAME" \
+    -partition_offset 16 -A "$RPGBUILDNAME" -V "$ISOLABEL" \
     -b isolinux/isolinux.bin -c isolinux/boot.cat \
     -no-emul-boot -boot-load-size 4 -boot-info-table \
+    "${XORRISO_UEFI[@]}" \
     -o "$RPGHOME/$RPGBUILDNAME-$ARCH.iso" \
     /respinguy-build-dir/
 
@@ -310,4 +437,9 @@ echo "_ _ _"
 echo "Build terminé avec succès !"
 echo "ISO : $RPGHOME/$RPGBUILDNAME-$ARCH.iso"
 echo "Taille : $(du -sh "$RPGHOME/$RPGBUILDNAME-$ARCH.iso" | cut -f1)"
+if [ "$RPG_UEFI" -eq 1 ]; then
+    echo "Demarrage : BIOS + UEFI"
+else
+    echo "Demarrage : BIOS uniquement"
+fi
 echo "_ _ _"

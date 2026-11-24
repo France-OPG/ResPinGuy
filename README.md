@@ -16,6 +16,8 @@
 - mksquashfs (avec prise en charge de -comp xz, la dépendance est généralement appelée: squashfs-tools)
 - dracut (avec prise en charge des modules squash et dmsquash-live)
 - xorriso
+- grub-mkstandalone ou grub2-mkstandalone (UEFI, recommandé)
+- mkfs.vfat (dosfstools) et mcopy (mtools) pour l'UEFI
 
 
 ### Simple utilisateur :

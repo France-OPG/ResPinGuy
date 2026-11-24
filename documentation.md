@@ -13,6 +13,8 @@
 - mksquashfs (avec prise en charge de -comp xz, la dépendance est généralement appelée: squashfs-tools)
 - dracut (avec prise en charge des modules squash et dmsquash-live)
 - xorriso
+- grub-mkstandalone ou grub2-mkstandalone (UEFI, recommandé)
+- mkfs.vfat (dosfstools) et mcopy (mtools) pour l'UEFI
 
 
 ### Interface interactive
@@ -92,6 +94,41 @@ sudo RPG_UI_ENGINE=basic RPG_NO_MOUSE=1 respinguy
 
 `whiptail`/newt ne permet pas d'activer la souris de façon fiable.
 `dialog`, s'il est installé, la gère nativement (`RPG_UI_ENGINE=dialog`).
+
+
+### Compatibilité de démarrage
+
+L'ISO générée est hybride :
+
+- **BIOS** via isolinux ;
+- **UEFI** via GRUB (si les outils UEFI sont installés) ;
+- démarrage depuis **CD/DVD** ou **clé USB** (écriture avec `dd`).
+
+Le démarrage utilise le **label de l'ISO** (`root=live:CDLABEL=...`) et non
+`/dev/sr0` : il fonctionne même si le lecteur n'est pas `sr0`, et depuis une
+clé USB.
+
+Réglages de compatibilité appliqués au live :
+
+- `selinux=0` et `apparmor=0` (évite les blocages liés aux labels du système source) ;
+- overlayfs pour la couche inscriptible ;
+- `/etc/fstab` et `/etc/crypttab` du système source neutralisés ;
+- services réseau et plymouth bloquants masqués.
+
+Distributions prévues pour la création : Debian/Ubuntu et dérivés,
+Fedora/RHEL/CentOS et dérivés, openSUSE, Arch/Manjaro/CachyOS et dérivés,
+Gentoo. LFS fonctionne si `dracut` (module `dmsquash-live`), `squashfs-tools`,
+`xorriso`, GRUB EFI, `dosfstools` et `mtools` sont installés.
+
+Limites physiques :
+
+- **Secure Boot** doit être désactivé : le GRUB généré n'est pas signé.
+- Les pilotes sont ceux du **noyau du système source**. Un noyau de distribution
+  standard couvre la plupart du matériel, mais les pilotes propriétaires
+  (NVIDIA, etc.) et certains firmwares doivent être installés sur la source
+  avant de créer l'ISO.
+- Une ISO créée sur une distribution reste une copie de **cette** distribution ;
+  elle ne devient pas une ISO Debian ou Fedora.
 
 
 ### (Version sudo) Liste des commandes avec leurs fonction :
