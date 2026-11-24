@@ -4,7 +4,13 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
-## [Non publié] - 2026-11-23
+## [0.32] - 2026-11-24
+
+### Ajouté
+- Numéro de version affiché en haut à droite de l'interface (au format `0.32`).
+- Fichier `ResPinGuy-File/VERSION` : source unique du numéro de version.
+
+## [0.31] - 2026-11-23
 
 ### Ajouté
 - Interface texte (TUI) lancée par `respinguy` : accueil, build, configuration,

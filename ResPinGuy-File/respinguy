@@ -18,6 +18,8 @@ RPG_LOCAL="$RPG_CONF_DIR/respinguy-config.local"
 RPG_LANG_DIR="$RPG_FILE_DIR/lang"
 RPG_LANG="${RPG_LANG-}"
 RPG_BACKTITLE="ResPinGuy"
+RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.32"
 
 # Palette officielle
 RPG_HEX_NAVY="#1d2f52"
@@ -235,6 +237,15 @@ rpg_term_size_str() {
     printf '%s' "$sz"
 }
 
+# Ligne du haut : "ResPinGuy" a gauche, version a droite (backtitle whiptail)
+rpg_backtitle() {
+    local cols pad
+    cols=$(rpg_term_cols)
+    pad=$((cols - ${#RPG_BACKTITLE} - ${#RPG_VERSION} - 2))
+    [ "$pad" -lt 1 ] && pad=1
+    printf '%s%*s%s' "$RPG_BACKTITLE" "$pad" "" "$RPG_VERSION"
+}
+
 # Hauteur adaptee au contenu (msgbox, yesno)
 rpg_ui_text_height() {
     local n
@@ -272,7 +283,7 @@ ui_menu() {
     [ "${UI_CANCEL_KEY-}" = "quit" ] && cancel="$L_BTN_QUIT"
 
     NEWT_COLORS="$RPG_NEWT_THEME" "$RPG_UI" \
-        --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --title "$title" --backtitle "$(rpg_backtitle)" \
         --cancel-button "$cancel" --ok-button "$L_BTN_VALIDATE" \
         --menu "$prompt" "$h" "$UI_W" "$listh" "$@" 3>&1 1>&2 2>&3
 }
@@ -293,7 +304,7 @@ ui_input() {
     [ "$h" -gt "$UI_H" ] && h=$UI_H
 
     NEWT_COLORS="$RPG_NEWT_THEME" "$RPG_UI" \
-        --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --title "$title" --backtitle "$(rpg_backtitle)" \
         --cancel-button "$L_BTN_CANCEL" --ok-button "$L_BTN_VALIDATE" \
         --inputbox "$prompt" "$h" "$UI_W" "$def" 3>&1 1>&2 2>&3
 }
@@ -315,7 +326,7 @@ ui_yesno() {
     [ "$kind" = "danger" ] && theme="$RPG_NEWT_DANGER"
 
     NEWT_COLORS="$theme" "$RPG_UI" \
-        --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --title "$title" --backtitle "$(rpg_backtitle)" \
         --yes-button "$L_BTN_YES" --no-button "$L_BTN_NO" \
         --yesno "$text" "$h" "$UI_W"
 }
@@ -337,7 +348,7 @@ ui_msg() {
     [ "$kind" = "error" ] && theme="$RPG_NEWT_DANGER"
 
     NEWT_COLORS="$theme" "$RPG_UI" \
-        --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --title "$title" --backtitle "$(rpg_backtitle)" \
         --ok-button "$L_BTN_OK" --msgbox "$text" "$h" "$UI_W"
 }
 
@@ -359,7 +370,7 @@ ui_text() {
     tmp=$(mktemp "${TMPDIR:-/tmp}/rpg-ui.XXXXXX") || return 1
     printf '%s\n' "$text" > "$tmp"
     NEWT_COLORS="$RPG_NEWT_THEME" "$RPG_UI" \
-        --title "$title" --backtitle "$RPG_BACKTITLE" \
+        --title "$title" --backtitle "$(rpg_backtitle)" \
         --ok-button "$L_BTN_CLOSE" --textbox "$tmp" "$UI_H" "$UI_W"
     rc=$?
     rm -f "$tmp"
@@ -384,11 +395,17 @@ rpg_mouse_off() {
     printf '\033[?1000l\033[?1006l' >&2
 }
 
-# Barre de titre : "ResPinGuy" a gauche en jaune, titre de la page a droite.
-rpg_basic_header() {    local title="$1"
+# Barre de titre : "ResPinGuy" a gauche, page au centre-gauche, version a droite.
+rpg_basic_header() {
+    local title="$1"
     local tcol="${2-$C_YELLOW}"
-    printf '%s%s %s%s - %s%s%s\n' \
-        "$C_BOLD" "$C_YELLOW" "$RPG_BACKTITLE" "$C_BLUE" "$tcol" "$title" "$C_RESET"
+    local cols pad
+    cols=$(rpg_term_cols)
+    pad=$((cols - ${#RPG_BACKTITLE} - ${#title} - ${#RPG_VERSION} - 7))
+    [ "$pad" -lt 1 ] && pad=1
+    printf '%s%s %s%s - %s%s%*s%s%s%s\n' \
+        "$C_BOLD" "$C_YELLOW" "$RPG_BACKTITLE" "$C_BLUE" "$tcol" "$title" \
+        "$pad" "" "$C_YELLOW" "$RPG_VERSION" "$C_RESET"
 }
 
 # Cadre bleu : ligne de separation
