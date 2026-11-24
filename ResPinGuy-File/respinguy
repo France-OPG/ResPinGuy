@@ -19,7 +19,7 @@ RPG_LANG_DIR="$RPG_FILE_DIR/lang"
 RPG_LANG="${RPG_LANG-}"
 RPG_BACKTITLE="ResPinGuy"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.32"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.33"
 
 # Palette officielle
 RPG_HEX_NAVY="#1d2f52"
@@ -496,7 +496,7 @@ basic_menu() {
                     printf '\n' >&2
                     rpg_mouse_off
                     return 1 ;;
-                $'\n'|$'\r')
+                ''|$'\n'|$'\r')
                     printf '\n' >&2
                     if [ -n "$buf" ] && [[ "$buf" =~ ^[0-9]+$ ]] \
                        && [ "$buf" -ge 1 ] && [ "$buf" -le ${#tags[@]} ]; then
@@ -1092,18 +1092,20 @@ action_config() {
 # Action : dependances
 
 action_deps() {
-    local out rc rc2
+    local out rc rc2 out2
     out=$(bash "$RPG_FILE_DIR/respinguy-app-dep" 2>&1)
     rc=$?
     ui_text "$L_DEPS_TITLE" "$out"
 
-    if [ $rc -ne 0 ]; then
+    if [ $rc -ne 0 ] || printf '%s' "$out" | grep -q 'OPTIONNEL'; then
         if ui_yesno "$L_DEPS_MISSING_T" "$L_DEPS_MISSING_B"; then
             clear
             bash "$RPG_FILE_DIR/respinguy-app-dep-force-install"
             rc2=$?
+            out2=$(bash "$RPG_FILE_DIR/respinguy-app-dep" 2>&1)
             rpg_deps_state
-            if [ $rc2 -eq 0 ] && [ "$DEPS_STATE" = "OK" ]; then
+            if [ $rc2 -eq 0 ] && [ "$DEPS_STATE" = "OK" ] \
+               && ! printf '%s' "$out2" | grep -q 'OPTIONNEL'; then
                 ui_msg "$L_DEPS_TITLE" "$L_DEPS_DONE"
             else
                 ui_error "$L_DEPS_TITLE" "$L_DEPS_PARTIAL"

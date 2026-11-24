@@ -23,20 +23,19 @@ else
 fi
 
 # Outils UEFI (optionnels : sans eux, ISO BIOS uniquement)
-UEFI_MISSING=0
+UEFI_MISSING=""
 if ! command -v grub-mkstandalone >/dev/null 2>&1 && ! command -v grub2-mkstandalone >/dev/null 2>&1; then
-  UEFI_MISSING=1
+  UEFI_MISSING="$UEFI_MISSING grub-mkstandalone"
 fi
 GRUB_DIR_OK=0
 for d in /usr/lib/grub/x86_64-efi /usr/lib/grub2/x86_64-efi /usr/lib/grub/x86_64-efi-signed; do
   if [ -d "$d" ]; then GRUB_DIR_OK=1; break; fi
 done
-[ $GRUB_DIR_OK -eq 1 ] || UEFI_MISSING=1
-command -v mkfs.vfat >/dev/null 2>&1 || UEFI_MISSING=1
-command -v mcopy >/dev/null 2>&1 || UEFI_MISSING=1
-if [ $UEFI_MISSING -eq 1 ]; then
-  echo "[OPTIONNEL] Outils UEFI manquants (ISO BIOS uniquement)"
-  echo "            grub-mkstandalone/grub2-mkstandalone, dosfstools, mtools"
+[ $GRUB_DIR_OK -eq 1 ] || UEFI_MISSING="$UEFI_MISSING modules-grub-efi"
+command -v mkfs.vfat >/dev/null 2>&1 || UEFI_MISSING="$UEFI_MISSING mkfs.vfat"
+command -v mcopy >/dev/null 2>&1 || UEFI_MISSING="$UEFI_MISSING mcopy"
+if [ -n "$UEFI_MISSING" ]; then
+  echo "[OPTIONNEL] Outils UEFI manquants (ISO BIOS uniquement) :$UEFI_MISSING"
 else
   echo "[OK] outils UEFI (GRUB)"
 fi

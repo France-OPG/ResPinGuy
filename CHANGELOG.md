@@ -4,6 +4,14 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.33] - 2026-11-24
+
+### Modifié
+- Le build et la vérification des dépendances indiquent précisément quel outil
+  UEFI manque (`grub-mkstandalone`, modules GRUB EFI, `mkfs.vfat`, `mcopy`).
+- Le menu des dépendances propose l'installation automatique aussi quand seuls
+  les outils optionnels (UEFI, installateur) manquent.
+
 ## [0.32] - 2026-11-24
 
 ### Ajouté
