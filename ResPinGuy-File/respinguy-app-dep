@@ -32,7 +32,9 @@ for d in /usr/lib/grub/x86_64-efi /usr/lib/grub2/x86_64-efi /usr/lib/grub/x86_64
   if [ -d "$d" ]; then GRUB_DIR_OK=1; break; fi
 done
 [ $GRUB_DIR_OK -eq 1 ] || UEFI_MISSING="$UEFI_MISSING modules-grub-efi"
-command -v mkfs.vfat >/dev/null 2>&1 || UEFI_MISSING="$UEFI_MISSING mkfs.vfat"
+if ! command -v mkfs.vfat >/dev/null 2>&1 && ! command -v mkfs.fat >/dev/null 2>&1; then
+  UEFI_MISSING="$UEFI_MISSING mkfs.vfat"
+fi
 command -v mcopy >/dev/null 2>&1 || UEFI_MISSING="$UEFI_MISSING mcopy"
 if [ -n "$UEFI_MISSING" ]; then
   echo "[OPTIONNEL] Outils UEFI manquants (ISO BIOS uniquement) :$UEFI_MISSING"

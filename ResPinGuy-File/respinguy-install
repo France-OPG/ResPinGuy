@@ -14,7 +14,7 @@ RPG_LOG="/tmp/respinguy-install.log"
 RPG_TARGET="/mnt/respinguy-target"
 CHROOT_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.33"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.34"
 
 say()  { printf '%s\n' "$*"; }
 warn() { printf '\n[ATTENTION] %s\n' "$*"; }
@@ -74,6 +74,13 @@ for tool in parted unsquashfs mkfs.ext4 blkid tar; do
     command -v "$tool" >/dev/null 2>&1 || die "Outil manquant dans le live : $tool"
 done
 
+MKFS_VFAT=""
+if command -v mkfs.vfat >/dev/null 2>&1; then
+    MKFS_VFAT="mkfs.vfat"
+elif command -v mkfs.fat >/dev/null 2>&1; then
+    MKFS_VFAT="mkfs.fat"
+fi
+
 if [ -d /sys/firmware/efi ]; then
     UEFI=1
     BOOT_MODE="UEFI"
@@ -81,7 +88,7 @@ else
     UEFI=0
     BOOT_MODE="BIOS"
 fi
-[ "$UEFI" -eq 1 ] && { command -v mkfs.vfat >/dev/null 2>&1 || die "Outil manquant : mkfs.vfat (dosfstools)."; }
+[ "$UEFI" -eq 1 ] && [ -z "$MKFS_VFAT" ] && die "Outil manquant : mkfs.vfat/mkfs.fat (dosfstools)."
 
 exec > >(tee -a "$RPG_LOG") 2>&1
 
@@ -205,7 +212,7 @@ mkfs.ext4 -F -L RESPINGUY_ROOT "$ROOT_PART" || die "Échec du formatage ext4."
 
 if [ "$UEFI" -eq 1 ]; then
     say "Formatage de l'ESP (FAT32)..."
-    mkfs.vfat -F 32 -n RESPINGUY_EFI "$ESP_PART" || die "Échec du formatage FAT32."
+    "$MKFS_VFAT" -F 32 -n RESPINGUY_EFI "$ESP_PART" || die "Échec du formatage FAT32."
 fi
 
 #----------------------------------------------------------------------------------------------

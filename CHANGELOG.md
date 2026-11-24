@@ -4,6 +4,13 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.34] - 2026-11-24
+
+### Modifié
+- Détection UEFI : accepte `mkfs.fat` quand `mkfs.vfat` n'existe pas
+  (certaines installations de `dosfstools` ne fournissent que ce nom).
+- L'installateur accepte également `mkfs.fat`/`mkfs.vfat`.
+
 ## [0.33] - 2026-11-24
 
 ### Modifié
