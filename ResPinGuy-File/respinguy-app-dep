@@ -40,6 +40,17 @@ if [ $UEFI_MISSING -eq 1 ]; then
 else
   echo "[OK] outils UEFI (GRUB)"
 fi
+
+# Outils de l'installateur live (parted, unsquashfs, mkfs.ext4)
+INST_MISSING=0
+for t in parted unsquashfs mkfs.ext4 blkid tar; do
+  command -v "$t" >/dev/null 2>&1 || INST_MISSING=1
+done
+if [ $INST_MISSING -eq 1 ]; then
+  echo "[OPTIONNEL] Outils installateur manquants (parted, unsquashfs, mkfs.ext4)"
+else
+  echo "[OK] outils installateur"
+fi
 echo "---"
 if [ $ERRORS -eq 0 ]; then
   echo "Toutes les dépendances sont installées."; exit 0

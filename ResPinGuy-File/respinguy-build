@@ -106,6 +106,16 @@ cd / || exit 1
 mkdir -p /respinguy-build-dir/LiveOS
 mkdir -p /respinguy-build-dir/isolinux
 
+# Archive du /etc d'origine : l'installateur la restaure sur le disque cible
+# (le /etc du live contient un fstab tmpfs, des services masqués, etc.)
+echo "Sauvegarde du /etc d'origine pour l'installateur..."
+if tar --help 2>&1 | grep -q -- '--xattrs'; then
+    tar -C / -cpf /respinguy-build-dir/LiveOS/etc-original.tar --xattrs --acls etc 2>/dev/null \
+        || tar -C / -cpf /respinguy-build-dir/LiveOS/etc-original.tar etc
+else
+    tar -C / -cpf /respinguy-build-dir/LiveOS/etc-original.tar etc
+fi
+
 echo "Copie des fichiers ISO..."
 cp -r /usr/share/ResPinGuy-File/fichier/iso/isolinux/. /respinguy-build-dir/isolinux/
 cp /usr/share/ResPinGuy-File-Config/bootimg.png /respinguy-build-dir/isolinux/
@@ -333,6 +343,7 @@ mksquashfs $SQSFDIR /respinguy-build-dir/LiveOS/squashfs.img \
     -e "var/tmp/*" \
     -e "root/.bash_history" "root/.cache" "root/.wget-hsts" \
     -e "home/*/.bash_history" "home/*/.cache" "home/*/.wget-hsts" \
+    -e "boot/efi" "boot/efi/*" \
     -e "usr/sbin/rpcbind" \
     -e "lib/systemd/system/rpcbind*" \
     -e "lib/systemd/system/nfs*" \

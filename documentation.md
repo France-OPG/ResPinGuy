@@ -15,6 +15,7 @@
 - xorriso
 - grub-mkstandalone ou grub2-mkstandalone (UEFI, recommandé)
 - mkfs.vfat (dosfstools) et mcopy (mtools) pour l'UEFI
+- parted, unsquashfs et mkfs.ext4 (installateur live)
 
 
 ### Interface interactive
@@ -129,6 +130,27 @@ Limites physiques :
   avant de créer l'ISO.
 - Une ISO créée sur une distribution reste une copie de **cette** distribution ;
   elle ne devient pas une ISO Debian ou Fedora.
+
+
+### Installateur (live uniquement)
+
+Depuis le live, la commande `respinguy-install` (ou l'entrée « Installer sur le
+disque » de l'interface) installe le système sur un disque.
+
+- Lancement uniquement si le système a démarré en live (`root=live:` / `rd.live.image`).
+- Efface **tout le disque** sélectionné, après double confirmation.
+- GPT + ESP (UEFI) ou MBR (BIOS), racine **ext4**.
+- Copie le rootfs du squashfs, restaure le `/etc` d'origine (archive
+  `LiveOS/etc-original.tar`), régénère le fstab, GRUB et l'initramfs.
+- Mots de passe root/utilisateur au choix.
+- Secure Boot doit rester désactivé.
+
+Limites du MVP : pas de dual boot, pas de btrfs/LVM/RAID/chiffrement, GRUB
+uniquement, et on installe la distribution du live (ce n'est pas un installateur
+Debian/Fedora générique).
+
+L'ISO doit être reconstruite avec cette version : l'archive `/etc` et le script
+d'installation sont ajoutés au build.
 
 
 ### (Version sudo) Liste des commandes avec leurs fonction :

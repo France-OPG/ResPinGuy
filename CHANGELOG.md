@@ -34,6 +34,10 @@ Les entrées les plus récentes sont en haut.
   `/etc/crypttab` neutralisé.
 - Détection des outils UEFI (`grub-mkstandalone`/`grub2-mkstandalone`,
   `dosfstools`, `mtools`) avec repli BIOS s'ils sont absents.
+- Installateur live (`respinguy-install` + entrée TUI) : disque entier, GPT/MBR,
+  ext4, GRUB, restauration du `/etc` d'origine, initramfs, mots de passe.
+- `respinguy-build` : archive `LiveOS/etc-original.tar` pour l'installateur et
+  exclusion de `/boot/efi` du squashfs.
 - Accès direct : `respinguy --build`, `--config`, `--deps`, `--help`.
 - Moteur d'affichage : `whiptail`, sinon `dialog`, sinon menu texte simple
   (aucune nouvelle dépendance obligatoire).

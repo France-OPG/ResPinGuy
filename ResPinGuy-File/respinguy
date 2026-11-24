@@ -857,6 +857,13 @@ rpg_deps_state() {
     fi
 }
 
+# Sommes-nous dans le live ResPinGuy ?
+rpg_is_live() {
+    grep -qE '(^| )root=live:|(^| )rd\.live\.image' /proc/cmdline 2>/dev/null && return 0
+    [ -f /run/initramfs/live/LiveOS/squashfs.img ] && return 0
+    return 1
+}
+
 #_____________________________________________________________________________________________
 # Action : creer l'image ISO
 
@@ -1142,6 +1149,19 @@ action_language() {
 }
 
 #_____________________________________________________________________________________________
+# Action : installer sur le disque
+
+action_install() {
+    if ! rpg_is_live; then
+        ui_error "$L_MENU_INSTALL" "$L_INSTALL_NOTLIVE"
+        return
+    fi
+    ui_yesno "$L_MENU_INSTALL" "$L_INSTALL_WARN_B" danger || return
+    clear
+    exec bash "$RPG_FILE_DIR/respinguy-install"
+}
+
+#_____________________________________________________________________________________________
 # Action : parametres et info
 
 action_settings() {
@@ -1172,18 +1192,19 @@ action_settings() {
 
 main_menu() {
     local choice
+    local -a items
     while :; do
         UI_CANCEL_KEY="quit"
         rpg_load_effective
-        choice=$(ui_menu "$L_MENU_HOME" "$(rpg_status_main)" \
-            build    "$L_MENU_BUILD" \
-            config   "$L_MENU_CONFIG" \
-            settings "$L_MENU_SETTINGS" \
-            quit     "$L_MENU_QUIT") || break
+        items=(build "$L_MENU_BUILD" config "$L_MENU_CONFIG")
+        rpg_is_live && items+=(install "$L_MENU_INSTALL")
+        items+=(settings "$L_MENU_SETTINGS" quit "$L_MENU_QUIT")
+        choice=$(ui_menu "$L_MENU_HOME" "$(rpg_status_main)" "${items[@]}") || break
 
         case "$choice" in
             build)    action_build ;;
             config)   action_config ;;
+            install)  action_install ;;
             settings) action_settings ;;
             *)        break ;;
         esac

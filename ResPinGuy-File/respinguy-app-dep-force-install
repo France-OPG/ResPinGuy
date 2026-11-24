@@ -42,6 +42,7 @@ install_pkg() {
                 grub-efi)       apt install -y grub-efi-amd64-bin ;;
                 dosfstools)     apt install -y dosfstools ;;
                 mtools)         apt install -y mtools ;;
+                parted)         apt install -y parted ;;
             esac ;;
         dnf|yum)
             case "$TOOL" in
@@ -57,6 +58,7 @@ install_pkg() {
                 grub-efi)       $PKG_MGR install -y grub2-tools-extra grub2-efi-x64-modules ;;
                 dosfstools)     $PKG_MGR install -y dosfstools ;;
                 mtools)         $PKG_MGR install -y mtools ;;
+                parted)         $PKG_MGR install -y parted ;;
             esac ;;
         pacman)
             case "$TOOL" in
@@ -72,6 +74,7 @@ install_pkg() {
                 grub-efi)       pacman -S --noconfirm grub ;;
                 dosfstools)     pacman -S --noconfirm dosfstools ;;
                 mtools)         pacman -S --noconfirm mtools ;;
+                parted)         pacman -S --noconfirm parted ;;
             esac ;;
         zypper)
             case "$TOOL" in
@@ -87,6 +90,7 @@ install_pkg() {
                 grub-efi)       zypper install -y grub2-x86_64-efi ;;
                 dosfstools)     zypper install -y dosfstools ;;
                 mtools)         zypper install -y mtools ;;
+                parted)         zypper install -y parted ;;
             esac ;;
         emerge)
             case "$TOOL" in
@@ -102,6 +106,7 @@ install_pkg() {
                 grub-efi)       emerge sys-boot/grub ;;
                 dosfstools)     emerge sys-fs/dosfstools ;;
                 mtools)         emerge sys-fs/mtools ;;
+                parted)         emerge sys-block/parted ;;
             esac ;;
         unknown)
             echo "[ERREUR] Gestionnaire de paquets non reconnu."
@@ -179,6 +184,10 @@ fi
 if ! command -v mcopy >/dev/null 2>&1; then
     echo "Installation de mtools..."
     install_pkg mtools && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
+fi
+if ! command -v parted >/dev/null 2>&1; then
+    echo "Installation de parted..."
+    install_pkg parted && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
 fi
 
 #_____________________________________________________________________________________________

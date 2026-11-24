@@ -18,6 +18,7 @@
 - xorriso
 - grub-mkstandalone ou grub2-mkstandalone (UEFI, recommandé)
 - mkfs.vfat (dosfstools) et mcopy (mtools) pour l'UEFI
+- parted, unsquashfs et mkfs.ext4 (installateur live)
 
 
 ### Simple utilisateur :

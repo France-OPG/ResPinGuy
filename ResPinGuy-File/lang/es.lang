@@ -22,6 +22,14 @@ L_MENU_PROMPT="¿Qué quieres hacer?"
 L_MENU_BUILD="Crear la imagen ISO"
 L_MENU_CONFIG="Configuración"
 L_MENU_SETTINGS="Ajustes e info"
+L_MENU_INSTALL="Instalar en el disco"
+L_INSTALL_WARN_B="El asistente instalará el sistema en un disco.
+
+El disco elegido se borrará por completo.
+Se perderán todos sus datos.
+
+¿Continuar?"
+L_INSTALL_NOTLIVE="El instalador solo puede ejecutarse desde el sistema live de ResPinGuy."
 L_SETTINGS_PROMPT="Elige una acción."
 L_MENU_DEPS="Comprobar dependencias"
 L_MENU_UPDATE="Actualizar ResPinGuy"
@@ -295,6 +303,7 @@ COMANDOS
                           Instalar dependencias faltantes
   respinguy-app-up        Actualizar ResPinGuy
   respinguy-app-rm        Eliminar ResPinGuy
+  respinguy-install       Instalar el sistema (solo live)
 
 ARCHIVOS
   /usr/share/ResPinGuy-File-Config/respinguy-config

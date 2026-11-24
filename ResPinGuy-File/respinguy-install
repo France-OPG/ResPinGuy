@@ -1,0 +1,379 @@
+#!/bin/bash
+#_____________________________________________________________________________________________
+# ResPinGuy - Installateur live (MVP)
+#
+# Ne fonctionne QUE depuis le live ResPinGuy (root=live: / rd.live.image).
+# Efface le disque choisi, installe le rootfs du squashfs, restaure le /etc
+# d'origine, configure le fstab, GRUB et l'initramfs.
+#
+# Messages en francais (version 1).
+#_____________________________________________________________________________________________
+
+RPG_FILE_DIR="/usr/share/ResPinGuy-File"
+RPG_LOG="/tmp/respinguy-install.log"
+RPG_TARGET="/mnt/respinguy-target"
+CHROOT_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+say()  { printf '%s\n' "$*"; }
+warn() { printf '\n[ATTENTION] %s\n' "$*"; }
+die()  { printf '\n[ERREUR] %s\n' "$*" >&2; exit 1; }
+
+ask() {
+    local prompt="$1"
+    local value
+    printf '%s' "$prompt" >&2
+    read -r value
+    printf '%s' "$value"
+}
+
+yesno() {
+    local prompt="$1"
+    local value
+    printf '%s' "$prompt"
+    read -r value
+    case "$value" in
+        o|O|y|Y|oui|Oui|OUI|yes|Yes|YES|s|S|si|Si|sí|Sí|sim|Sim) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+part_path() {
+    case "$1" in
+        *[0-9]) printf '%sp%s' "$1" "$2" ;;
+        *)      printf '%s%s'  "$1" "$2" ;;
+    esac
+}
+
+#----------------------------------------------------------------------------------------------
+# Verification de l'environnement
+
+[ "0$UID" -eq 0 ] || die "Merci d'être en root."
+
+if ! grep -qE '(^| )root=live:|(^| )rd\.live\.image' /proc/cmdline 2>/dev/null; then
+    die "Ce système n'est pas un live ResPinGuy. Installation refusée."
+fi
+
+rpg_live_dir() {
+    local mnt
+    for mnt in /run/initramfs/live /run/initramfs/livedev /mnt/live; do
+        [ -f "$mnt/LiveOS/squashfs.img" ] && { printf '%s' "$mnt"; return 0; }
+    done
+    while read -r _ mnt _; do
+        [ -f "$mnt/LiveOS/squashfs.img" ] && { printf '%s' "$mnt"; return 0; }
+    done < /proc/mounts
+    return 1
+}
+
+LIVE_DIR=$(rpg_live_dir) || die "Impossible de trouver le système live (LiveOS/squashfs.img)."
+SQUASHFS="$LIVE_DIR/LiveOS/squashfs.img"
+ETC_TAR="$LIVE_DIR/LiveOS/etc-original.tar"
+
+for tool in parted unsquashfs mkfs.ext4 blkid tar; do
+    command -v "$tool" >/dev/null 2>&1 || die "Outil manquant dans le live : $tool"
+done
+
+if [ -d /sys/firmware/efi ]; then
+    UEFI=1
+    BOOT_MODE="UEFI"
+else
+    UEFI=0
+    BOOT_MODE="BIOS"
+fi
+[ "$UEFI" -eq 1 ] && { command -v mkfs.vfat >/dev/null 2>&1 || die "Outil manquant : mkfs.vfat (dosfstools)."; }
+
+exec > >(tee -a "$RPG_LOG") 2>&1
+
+#----------------------------------------------------------------------------------------------
+# Nettoyage
+
+cleanup() {
+    umount -R "$RPG_TARGET" 2>/dev/null || true
+}
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT TERM
+
+#----------------------------------------------------------------------------------------------
+# Presentation
+
+DISTRO=$(sed -n 's/^PRETTY_NAME=//p' /etc/os-release 2>/dev/null | tr -d '"' | head -n1)
+[ -n "$DISTRO" ] || DISTRO="inconnue"
+
+say "=============================================="
+say " ResPinGuy - Installation sur le disque"
+say "=============================================="
+say "Distribution : $DISTRO"
+say "Architecture : $(uname -m)"
+say "Démarrage    : $BOOT_MODE"
+say ""
+say "ATTENTION : cette opération va EFFACER le disque choisi."
+say "Toutes les données du disque seront perdues."
+say ""
+if ! yesno "Continuer ? [o/N] "; then
+    say "Installation annulée."
+    exit 0
+fi
+
+#----------------------------------------------------------------------------------------------
+# Choix du disque
+
+live_src=$(findmnt -n -o SOURCE "$LIVE_DIR" 2>/dev/null | head -n1)
+[ -n "$live_src" ] || live_src=$(awk -v d="$LIVE_DIR" '$2 == d { print $1; exit }' /proc/mounts 2>/dev/null)
+live_disk=""
+if [ -n "$live_src" ] && [ -b "$live_src" ]; then
+    pk=$(lsblk -n -o PKNAME "$live_src" 2>/dev/null | head -n1)
+    if [ -n "$pk" ]; then live_disk="/dev/$pk"; else live_disk="$live_src"; fi
+fi
+
+CANDIDATES=()
+say "Disques disponibles :"
+while read -r name size model; do
+    case "$name" in
+        /dev/loop*|/dev/sr*|/dev/zram*|/dev/ram*|/dev/dm-*|/dev/md*) continue ;;
+    esac
+    [ -b "$name" ] || continue
+    [ "$name" = "$live_disk" ] && continue
+    CANDIDATES+=("$name")
+    printf '  %d) %s  %s  %s\n' "${#CANDIDATES[@]}" "$name" "$size" "$model"
+done < <(lsblk -dpno NAME,SIZE,MODEL 2>/dev/null)
+
+[ "${#CANDIDATES[@]}" -gt 0 ] || die "Aucun disque disponible."
+
+num=$(ask "Numéro du disque à installer : ")
+case "$num" in
+    ''|*[!0-9]*) die "Sélection invalide." ;;
+esac
+[ "$num" -ge 1 ] && [ "$num" -le "${#CANDIDATES[@]}" ] || die "Sélection invalide."
+DISK="${CANDIDATES[$((num - 1))]}"
+
+[ "$DISK" != "$live_disk" ] || die "Ce disque contient le live. Choisissez un autre disque."
+
+if lsblk -n -o MOUNTPOINT "$DISK" 2>/dev/null | grep -q '[^[:space:]]'; then
+    die "Une partition de $DISK est montée. Démontez-la d'abord."
+fi
+
+DISK_BYTES=$(blockdev --getsize64 "$DISK" 2>/dev/null || echo 0)
+SQUASH_BYTES=$(stat -c %s "$SQUASHFS" 2>/dev/null || echo 0)
+UNSQUASH_BYTES=$(unsquashfs -s "$SQUASHFS" 2>/dev/null | awk '/Filesystem size/ { print $3; exit }')
+case "$UNSQUASH_BYTES" in
+    ''|*[!0-9]*) UNSQUASH_BYTES="$SQUASH_BYTES" ;;
+esac
+MIN_BYTES=$(( UNSQUASH_BYTES + 2 * 1024 * 1024 * 1024 ))
+if [ "$DISK_BYTES" -lt "$MIN_BYTES" ]; then
+    die "Disque trop petit pour contenir le système (minimum ~$((MIN_BYTES / 1024 / 1024)) Mo)."
+fi
+
+say ""
+lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT "$DISK"
+say ""
+c=$(ask "Tapez le chemin du disque ($DISK) pour confirmer : ")
+[ "$c" = "$DISK" ] || die "Confirmation incorrecte. Installation annulée."
+c=$(ask "Tapez EFFACER pour confirmer : ")
+[ "$c" = "EFFACER" ] || die "Confirmation incorrecte. Installation annulée."
+
+#----------------------------------------------------------------------------------------------
+# Partitionnement
+
+say ""
+say "Partitionnement de $DISK..."
+wipefs -a "$DISK" >/dev/null 2>&1 || true
+
+if [ "$UEFI" -eq 1 ]; then
+    parted -s "$DISK" mklabel gpt || die "Échec de création de la table GPT."
+    parted -s "$DISK" mkpart ESP fat32 1MiB 513MiB || die "Échec de création de l'ESP."
+    parted -s "$DISK" set 1 esp on || die "Échec du marquage ESP."
+    parted -s "$DISK" mkpart root ext4 513MiB 100% || die "Échec de création de la racine."
+    ESP_PART=$(part_path "$DISK" 1)
+    ROOT_PART=$(part_path "$DISK" 2)
+else
+    parted -s "$DISK" mklabel msdos || die "Échec de création de la table MBR."
+    parted -s "$DISK" mkpart primary ext4 1MiB 100% || die "Échec de création de la partition."
+    parted -s "$DISK" set 1 boot on || die "Échec du marquage boot."
+    ROOT_PART=$(part_path "$DISK" 1)
+fi
+
+partprobe "$DISK" 2>/dev/null || true
+udevadm settle 2>/dev/null || sleep 2
+[ -b "$ROOT_PART" ] || die "Partition racine introuvable : $ROOT_PART"
+
+#----------------------------------------------------------------------------------------------
+# Formatage
+
+say "Formatage de la racine (ext4)..."
+mkfs.ext4 -F -L RESPINGUY_ROOT "$ROOT_PART" || die "Échec du formatage ext4."
+
+if [ "$UEFI" -eq 1 ]; then
+    say "Formatage de l'ESP (FAT32)..."
+    mkfs.vfat -F 32 -n RESPINGUY_EFI "$ESP_PART" || die "Échec du formatage FAT32."
+fi
+
+#----------------------------------------------------------------------------------------------
+# Extraction du systeme
+
+mkdir -p "$RPG_TARGET"
+mount "$ROOT_PART" "$RPG_TARGET" || die "Impossible de monter $ROOT_PART."
+
+say "Extraction du système (cela peut prendre plusieurs minutes)..."
+unsquashfs -f -d "$RPG_TARGET" "$SQUASHFS" || die "Échec de l'extraction du squashfs."
+
+# Le squashfs contient le /etc du live (fstab tmpfs, services masqués...).
+# On restaure le /etc d'origine sauvegarde par le build.
+if [ -f "$ETC_TAR" ]; then
+    say "Restauration du /etc d'origine..."
+    rm -rf "$RPG_TARGET/etc"
+    if ! tar -C "$RPG_TARGET" -xpf "$ETC_TAR" --xattrs --acls 2>/dev/null; then
+        tar -C "$RPG_TARGET" -xpf "$ETC_TAR" || die "Échec de la restauration de /etc."
+    fi
+else
+    warn "Archive /etc d'origine absente de l'ISO : le système peut hériter des réglages live."
+fi
+
+# Repertoires absents du squashfs
+mkdir -p "$RPG_TARGET"/dev "$RPG_TARGET"/proc "$RPG_TARGET"/sys "$RPG_TARGET"/run \
+         "$RPG_TARGET"/tmp "$RPG_TARGET"/mnt "$RPG_TARGET"/media
+chmod 1777 "$RPG_TARGET/tmp"
+chmod 755 "$RPG_TARGET/dev" "$RPG_TARGET/proc" "$RPG_TARGET/sys" "$RPG_TARGET/run"
+
+if [ "$UEFI" -eq 1 ]; then
+    mkdir -p "$RPG_TARGET/boot/efi"
+    mount "$ESP_PART" "$RPG_TARGET/boot/efi" || die "Impossible de monter l'ESP."
+fi
+
+#----------------------------------------------------------------------------------------------
+# fstab, hostname, identifiants
+
+ROOT_UUID=$(blkid -s UUID -o value "$ROOT_PART") || die "Impossible de lire l'UUID de la racine."
+{
+    echo "# /etc/fstab - système installé par ResPinGuy"
+    echo "UUID=$ROOT_UUID  /  ext4  defaults  0 1"
+    if [ "$UEFI" -eq 1 ]; then
+        ESP_UUID=$(blkid -s UUID -o value "$ESP_PART")
+        echo "UUID=$ESP_UUID  /boot/efi  vfat  umask=0077  0 1"
+    fi
+} > "$RPG_TARGET/etc/fstab" || die "Impossible d'écrire /etc/fstab."
+
+: > "$RPG_TARGET/etc/crypttab" 2>/dev/null || true
+: > "$RPG_TARGET/etc/machine-id" 2>/dev/null || true
+[ -f "$RPG_TARGET/etc/mdadm.conf" ] && : > "$RPG_TARGET/etc/mdadm.conf"
+
+DEF_HOST=$(cat "$RPG_TARGET/etc/hostname" 2>/dev/null)
+HOST=$(ask "Nom de la machine [$DEF_HOST] : ")
+[ -z "$HOST" ] && HOST="$DEF_HOST"
+if [ -n "$HOST" ]; then
+    printf '%s\n' "$HOST" > "$RPG_TARGET/etc/hostname"
+    if grep -q '^127\.0\.1\.1' "$RPG_TARGET/etc/hosts" 2>/dev/null; then
+        sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t$HOST/" "$RPG_TARGET/etc/hosts"
+    else
+        printf '127.0.1.1\t%s\n' "$HOST" >> "$RPG_TARGET/etc/hosts"
+    fi
+fi
+
+#----------------------------------------------------------------------------------------------
+# chroot
+
+say "Préparation du chroot..."
+mkdir -p "$RPG_TARGET/dev/pts"
+mount --bind /dev "$RPG_TARGET/dev" || die "Impossible de monter /dev."
+mount --bind /dev/pts "$RPG_TARGET/dev/pts" 2>/dev/null || true
+mount -t proc proc "$RPG_TARGET/proc" || die "Impossible de monter /proc."
+mount -t sysfs sys "$RPG_TARGET/sys" || die "Impossible de monter /sys."
+mount --bind /run "$RPG_TARGET/run" 2>/dev/null || true
+
+GRUB_INSTALL=""
+GRUB_MKCONFIG=""
+if env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v grub-install >/dev/null 2>&1'; then
+    GRUB_INSTALL="grub-install"
+    GRUB_MKCONFIG="grub-mkconfig"
+elif env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v grub2-install >/dev/null 2>&1'; then
+    GRUB_INSTALL="grub2-install"
+    GRUB_MKCONFIG="grub2-mkconfig"
+else
+    die "GRUB n'est pas installé dans le système source. Installez-le avant de créer l'ISO."
+fi
+
+say "Installation de GRUB ($BOOT_MODE)..."
+if [ "$UEFI" -eq 1 ]; then
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" "$GRUB_INSTALL" --target=x86_64-efi \
+        --efi-directory=/boot/efi --bootloader-id=ResPinGuy --recheck \
+        || die "Échec de grub-install (UEFI)."
+    mkdir -p "$RPG_TARGET/boot/efi/EFI/BOOT"
+    cp "$RPG_TARGET/boot/efi/EFI/ResPinGuy/grubx64.efi" \
+       "$RPG_TARGET/boot/efi/EFI/BOOT/BOOTX64.EFI" 2>/dev/null || true
+else
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" "$GRUB_INSTALL" --target=i386-pc --recheck "$DISK" \
+        || die "Échec de grub-install (BIOS)."
+fi
+
+if [ -d "$RPG_TARGET/boot/grub2" ]; then
+    GRUB_CFG="/boot/grub2/grub.cfg"
+else
+    GRUB_CFG="/boot/grub/grub.cfg"
+fi
+env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" "$GRUB_MKCONFIG" -o "$GRUB_CFG" || warn "Échec de la génération de grub.cfg."
+
+say "Régénération de l'initramfs..."
+if env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v update-initramfs >/dev/null 2>&1'; then
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" update-initramfs -u -k all || warn "Échec de update-initramfs."
+elif env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v mkinitcpio >/dev/null 2>&1'; then
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" mkinitcpio -P || warn "Échec de mkinitcpio."
+elif env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v dracut >/dev/null 2>&1'; then
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" dracut -f --regenerate-all 2>/dev/null \
+        || env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" dracut -f \
+        || warn "Échec de dracut."
+else
+    warn "Aucun outil d'initramfs reconnu (update-initramfs, mkinitcpio, dracut)."
+fi
+
+# Identifiants machine et cles SSH
+rm -f "$RPG_TARGET/etc/machine-id"
+env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" systemd-machine-id-setup 2>/dev/null || : > "$RPG_TARGET/etc/machine-id"
+
+if env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v ssh-keygen >/dev/null 2>&1'; then
+    rm -f "$RPG_TARGET"/etc/ssh/ssh_host_* 2>/dev/null || true
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" ssh-keygen -A 2>/dev/null || true
+fi
+
+# SELinux : relabel au premier demarrage si present
+[ -f "$RPG_TARGET/etc/selinux/config" ] && touch "$RPG_TARGET/.autorelabel"
+
+#----------------------------------------------------------------------------------------------
+# Mots de passe
+
+say ""
+if yesno "Définir un mot de passe pour root ? [o/N] "; then
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" passwd root || warn "Échec du changement de mot de passe root."
+fi
+
+if yesno "Définir un mot de passe pour un utilisateur ? [o/N] "; then
+    say "Utilisateurs disponibles :"
+    awk -F: '$3 >= 1000 && $3 < 65534 { print "  - " $1 }' "$RPG_TARGET/etc/passwd"
+    U=$(ask "Utilisateur : ")
+    if grep -q "^$U:" "$RPG_TARGET/etc/passwd"; then
+        env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" passwd "$U" || warn "Échec du changement de mot de passe."
+    else
+        warn "Utilisateur inconnu : $U"
+    fi
+fi
+
+#----------------------------------------------------------------------------------------------
+# Fin
+
+cp "$RPG_LOG" "$RPG_TARGET/var/log/respinguy-install.log" 2>/dev/null || true
+
+say ""
+say "=============================================="
+say " Installation terminée."
+say " Disque   : $DISK"
+say " Racine   : $ROOT_PART (ext4)"
+[ "$UEFI" -eq 1 ] && say " ESP      : $ESP_PART (FAT32)"
+say " Démarrage: $BOOT_MODE"
+say " Journal  : /var/log/respinguy-install.log"
+say "=============================================="
+
+if yesno "Redémarrer maintenant ? [o/N] "; then
+    sync
+    umount -R "$RPG_TARGET" 2>/dev/null || true
+    trap - EXIT
+    reboot
+else
+    say "Tu peux redémarrer manuellement : sync && umount -R $RPG_TARGET && reboot"
+fi

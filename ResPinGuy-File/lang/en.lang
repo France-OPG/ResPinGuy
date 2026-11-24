@@ -22,6 +22,14 @@ L_MENU_PROMPT="What do you want to do?"
 L_MENU_BUILD="Create the ISO image"
 L_MENU_CONFIG="Configuration"
 L_MENU_SETTINGS="Settings & info"
+L_MENU_INSTALL="Install to disk"
+L_INSTALL_WARN_B="The assistant will install the system to a disk.
+
+The selected disk will be completely erased.
+All its data will be lost.
+
+Continue?"
+L_INSTALL_NOTLIVE="The installer can only run from the ResPinGuy live system."
 L_SETTINGS_PROMPT="Choose an action."
 L_MENU_DEPS="Check dependencies"
 L_MENU_UPDATE="Update ResPinGuy"
@@ -295,6 +303,7 @@ COMMANDS
                           Install missing dependencies
   respinguy-app-up        Update ResPinGuy
   respinguy-app-rm        Remove ResPinGuy
+  respinguy-install       Install the system (live only)
 
 FILES
   /usr/share/ResPinGuy-File-Config/respinguy-config

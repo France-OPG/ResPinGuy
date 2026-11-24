@@ -22,6 +22,14 @@ L_MENU_PROMPT="Was möchtest du tun?"
 L_MENU_BUILD="ISO-Abbild erstellen"
 L_MENU_CONFIG="Konfiguration"
 L_MENU_SETTINGS="Einstellungen & Info"
+L_MENU_INSTALL="Auf Datenträger installieren"
+L_INSTALL_WARN_B="Der Assistent installiert das System auf einen Datenträger.
+
+Der gewählte Datenträger wird vollständig gelöscht.
+Alle Daten gehen verloren.
+
+Fortfahren?"
+L_INSTALL_NOTLIVE="Der Installer kann nur aus dem ResPinGuy-Live-System gestartet werden."
 L_SETTINGS_PROMPT="Wähle eine Aktion."
 L_MENU_DEPS="Abhängigkeiten prüfen"
 L_MENU_UPDATE="ResPinGuy aktualisieren"
@@ -295,6 +303,7 @@ BEFEHLE
                           Fehlende Abhängigkeiten installieren
   respinguy-app-up        ResPinGuy aktualisieren
   respinguy-app-rm        ResPinGuy entfernen
+  respinguy-install       System installieren (nur Live)
 
 DATEIEN
   /usr/share/ResPinGuy-File-Config/respinguy-config
