@@ -35,6 +35,20 @@
   `e2fsprogs`, `dosfstools`, `mtools`, `parted`). **Expérimental** : nécessite
   un compilateur C, `make`, `tar` et `wget`/`curl`. GRUB n'est pas compilé.
 
+### Dépannage : outils non trouvés
+
+Si `parted`, `mkfs.ext4`, `mkfs.vfat`, `blkid` ou `grub-install` sont signalés
+manquants alors qu'ils sont installés, c'est un PATH sans `/usr/sbin`.
+Les scripts ResPinGuy forcent désormais un PATH complet. Sur une ancienne
+version :
+
+```bash
+echo $PATH
+sudo env PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" respinguy
+```
+
+Ou lancez un vrai shell root (`su -`) plutôt que `su`.
+
 
 ### Interface interactive
 

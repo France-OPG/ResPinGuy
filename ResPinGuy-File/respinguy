@@ -11,6 +11,8 @@
 # Aucune dependance supplementaire n'est obligatoire.
 #_____________________________________________________________________________________________
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin${PATH:+:$PATH}"
+
 RPG_FILE_DIR="/usr/share/ResPinGuy-File"
 RPG_CONF_DIR="/usr/share/ResPinGuy-File-Config"
 RPG_CONF="$RPG_CONF_DIR/respinguy-config"
@@ -19,7 +21,7 @@ RPG_LANG_DIR="$RPG_FILE_DIR/lang"
 RPG_LANG="${RPG_LANG-}"
 RPG_BACKTITLE="ResPinGuy"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.37"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.38"
 
 # Palette officielle
 RPG_HEX_NAVY="#1d2f52"

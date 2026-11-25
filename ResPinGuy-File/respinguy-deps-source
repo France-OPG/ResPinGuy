@@ -15,7 +15,7 @@ PREFIX="/usr/local"
 WORK="/usr/local/src/respinguy-deps"
 LOG="$WORK/build.log"
 
-export PATH="$PREFIX/sbin:$PREFIX/bin:$PATH"
+export PATH="$PREFIX/sbin:$PREFIX/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin${PATH:+:$PATH}"
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig"
 export LDFLAGS="-L$PREFIX/lib"
 export CPPFLAGS="-I$PREFIX/include"

@@ -4,6 +4,15 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.38] - 2026-11-25
+
+### Corrigé
+- PATH complet forcé dans tous les scripts : les outils de `/usr/sbin`
+  (`parted`, `mkfs.ext4`, `mkfs.vfat`, `blkid`, `grub-install`) sont maintenant
+  détectés même si le shell root n'a pas `/usr/sbin` dans son PATH.
+- Installation de `grub-common` (`grub-install`/`grub-mkconfig`) ajoutée à
+  l'installation automatique.
+
 ## [0.37] - 2026-11-25
 
 ### Modifié
