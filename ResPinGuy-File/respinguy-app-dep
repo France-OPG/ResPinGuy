@@ -40,9 +40,6 @@ for d in /usr/lib/grub/x86_64-efi /usr/lib/grub2/x86_64-efi /usr/lib/grub/x86_64
   if [ -d "$d" ]; then GRUB_DIR_OK=1; break; fi
 done
 [ $GRUB_DIR_OK -eq 1 ] || UEFI_MISSING="$UEFI_MISSING modules-grub-efi"
-if ! command -v mkfs.vfat >/dev/null 2>&1 && ! command -v mkfs.fat >/dev/null 2>&1; then
-  UEFI_MISSING="$UEFI_MISSING mkfs.vfat"
-fi
 command -v mcopy >/dev/null 2>&1 || UEFI_MISSING="$UEFI_MISSING mcopy"
 if [ -n "$UEFI_MISSING" ]; then
   echo "[OPTIONNEL] Outils UEFI manquants (ISO BIOS uniquement) :$UEFI_MISSING"
@@ -50,16 +47,23 @@ else
   echo "[OK] outils UEFI (GRUB)"
 fi
 
-# Outils de l'installateur live (parted, unsquashfs, mkfs.ext4)
-INST_MISSING=0
+# Outils de l'installateur live (obligatoires)
+INST_BEFORE=$ERRORS
 for t in parted unsquashfs mkfs.ext4 blkid tar; do
-  command -v "$t" >/dev/null 2>&1 || INST_MISSING=1
+  if ! command -v "$t" >/dev/null 2>&1; then
+    echo "[MANQUANT] $t (installateur)"; ERRORS=$((ERRORS+1))
+  fi
 done
-if [ $INST_MISSING -eq 1 ]; then
-  echo "[OPTIONNEL] Outils installateur manquants (parted, unsquashfs, mkfs.ext4)"
-else
-  echo "[OK] outils installateur"
+if ! command -v mkfs.vfat >/dev/null 2>&1 && ! command -v mkfs.fat >/dev/null 2>&1; then
+  echo "[MANQUANT] mkfs.vfat/mkfs.fat (installateur UEFI)"; ERRORS=$((ERRORS+1))
 fi
+if ! command -v grub-install >/dev/null 2>&1 && ! command -v grub2-install >/dev/null 2>&1; then
+  echo "[MANQUANT] grub-install (installateur)"; ERRORS=$((ERRORS+1))
+fi
+if ! command -v grub-mkconfig >/dev/null 2>&1 && ! command -v grub2-mkconfig >/dev/null 2>&1; then
+  echo "[MANQUANT] grub-mkconfig (installateur)"; ERRORS=$((ERRORS+1))
+fi
+[ $ERRORS -eq $INST_BEFORE ] && echo "[OK] outils installateur"
 echo "---"
 if [ $ERRORS -eq 0 ]; then
   echo "Toutes les dépendances sont installées."; exit 0

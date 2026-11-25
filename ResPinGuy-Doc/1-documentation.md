@@ -15,7 +15,7 @@
 - xorriso
 - grub-mkstandalone ou grub2-mkstandalone (UEFI, recommandé)
 - mkfs.vfat (dosfstools) et mcopy (mtools) pour l'UEFI
-- parted, unsquashfs et mkfs.ext4 (installateur live)
+- parted, unsquashfs, mkfs.ext4, blkid et grub-install (installateur live, obligatoire)
 
 
 ### Installation des dépendances
@@ -25,6 +25,9 @@
 - `sudo respinguy` refuse de démarrer tant qu'une dépendance obligatoire manque.
   Le message indique la commande à lancer. Contournement :
   `RPG_SKIP_DEPS=1 respinguy`.
+- Les outils de l'installateur (`parted`, `unsquashfs`, `mkfs.ext4`, `blkid`,
+  `tar`, `mkfs.vfat`/`mkfs.fat`, `grub-install`, `grub-mkconfig`) sont
+  **obligatoires**.
 - Sans gestionnaire de paquets (LFS, distributions indépendantes) :
   `sudo /usr/share/ResPinGuy-File/respinguy-deps-source` tente de compiler
   depuis les sources (`zlib`, `xz`, `squashfs-tools`, `xorriso`, `dracut`,
@@ -152,6 +155,8 @@ Depuis le live, la commande `respinguy-install` (ou l'entrée « Installer sur l
 disque » de l'interface) installe le système sur un disque.
 
 - Lancement uniquement si le système a démarré en live (`root=live:` / `rd.live.image`).
+- Prérequis obligatoires : `parted`, `unsquashfs`, `mkfs.ext4`, `blkid`, `tar`,
+  `mkfs.vfat`/`mkfs.fat`, GRUB (`grub-install`, `grub-mkconfig`).
 - Efface **tout le disque** sélectionné, après double confirmation.
 - GPT + ESP (UEFI) ou MBR (BIOS), racine **ext4**.
 - Copie le rootfs du squashfs, restaure le `/etc` d'origine (archive

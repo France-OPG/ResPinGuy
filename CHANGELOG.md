@@ -4,6 +4,15 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.36] - 2026-11-25
+
+### Modifié
+- Les outils de l'installateur (`parted`, `unsquashfs`, `mkfs.ext4`, `blkid`,
+  `tar`, `mkfs.vfat`/`mkfs.fat`, `grub-install`, `grub-mkconfig`) sont désormais
+  **obligatoires** : `respinguy` refuse de démarrer s'ils manquent.
+- Les outils UEFI de build (`grub-mkstandalone`, modules GRUB EFI, `mcopy`)
+  restent optionnels (ISO BIOS uniquement s'ils manquent).
+
 ## [0.35] - 2026-11-25
 
 ### Ajouté
