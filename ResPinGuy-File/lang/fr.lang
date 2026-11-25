@@ -233,6 +233,17 @@ Le gestionnaire de paquets détecté sera utilisé
 (apt, dnf, yum, pacman, zypper ou emerge)."
 L_DEPS_DONE="Installation terminée.
 Toutes les dépendances sont présentes."
+L_DEPS_BLOCK_MSG="Installez les dépendances puis relancez :
+
+  sudo respinguy-app-dep-force-install
+
+Sans gestionnaire de paquets (LFS) :
+
+  sudo /usr/share/ResPinGuy-File/respinguy-deps-source
+
+Pour forcer le lancement :
+
+  RPG_SKIP_DEPS=1 respinguy"
 L_DEPS_PARTIAL="Installation terminée, mais il reste des éléments manquants.
 
 Relancez la vérification ou installez-les manuellement."

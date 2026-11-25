@@ -19,7 +19,7 @@ RPG_LANG_DIR="$RPG_FILE_DIR/lang"
 RPG_LANG="${RPG_LANG-}"
 RPG_BACKTITLE="ResPinGuy"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.34"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.35"
 
 # Palette officielle
 RPG_HEX_NAVY="#1d2f52"
@@ -1257,6 +1257,17 @@ case "${1-}" in
         action_help
         exit 0 ;;
 esac
+
+# Refus de lancer l'interface si les dependances obligatoires manquent
+if [ -z "${RPG_SKIP_DEPS-}" ]; then
+    RPG_DEPS_OUT=$(bash "$RPG_FILE_DIR/respinguy-app-dep" 2>&1)
+    if [ $? -ne 0 ]; then
+        ui_text "$L_DEPS_TITLE" "$RPG_DEPS_OUT
+
+$L_DEPS_BLOCK_MSG"
+        exit 1
+    fi
+fi
 
 rpg_ensure_compat
 rpg_deps_state

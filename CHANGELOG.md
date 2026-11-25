@@ -4,6 +4,21 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.35] - 2026-11-25
+
+### Ajouté
+- `install` installe automatiquement les dépendances via le gestionnaire de
+  paquets détecté (apt, dnf, yum, pacman, zypper, emerge).
+- `respinguy` refuse de démarrer si une dépendance obligatoire manque.
+  Contournement : `RPG_SKIP_DEPS=1 respinguy`.
+- `respinguy-deps-source` : compilation des outils essentiels depuis les
+  sources pour LFS / distributions sans gestionnaire de paquets (expérimental,
+  GRUB exclu).
+
+### Modifié
+- Vérification des modules dracut `squash` et `dmsquash-live`.
+- `respinguy-app-dep-force-install` installe aussi `e2fsprogs` et `whiptail`.
+
 ## [0.34] - 2026-11-24
 
 ### Modifié

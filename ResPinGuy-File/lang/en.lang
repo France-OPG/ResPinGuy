@@ -232,6 +232,17 @@ The detected package manager will be used
 (apt, dnf, yum, pacman, zypper or emerge)."
 L_DEPS_DONE="Installation finished.
 All dependencies are present."
+L_DEPS_BLOCK_MSG="Install the dependencies, then run again:
+
+  sudo respinguy-app-dep-force-install
+
+Without a package manager (LFS):
+
+  sudo /usr/share/ResPinGuy-File/respinguy-deps-source
+
+To force the start:
+
+  RPG_SKIP_DEPS=1 respinguy"
 L_DEPS_PARTIAL="Installation finished, but some items are still missing.
 
 Run the check again or install them manually."

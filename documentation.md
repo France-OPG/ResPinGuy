@@ -18,6 +18,20 @@
 - parted, unsquashfs et mkfs.ext4 (installateur live)
 
 
+### Installation des dépendances
+
+- `sudo bash install` détecte la distribution et installe automatiquement les
+  paquets manquants (apt, dnf, yum, pacman, zypper, emerge).
+- `sudo respinguy` refuse de démarrer tant qu'une dépendance obligatoire manque.
+  Le message indique la commande à lancer. Contournement :
+  `RPG_SKIP_DEPS=1 respinguy`.
+- Sans gestionnaire de paquets (LFS, distributions indépendantes) :
+  `sudo /usr/share/ResPinGuy-File/respinguy-deps-source` tente de compiler
+  depuis les sources (`zlib`, `xz`, `squashfs-tools`, `xorriso`, `dracut`,
+  `e2fsprogs`, `dosfstools`, `mtools`, `parted`). **Expérimental** : nécessite
+  un compilateur C, `make`, `tar` et `wget`/`curl`. GRUB n'est pas compilé.
+
+
 ### Interface interactive
 
 La commande `respinguy` ouvre un menu plein écran :

@@ -15,6 +15,14 @@ check sh
 check nano
 check uname
 check dracut
+if [ -n "$(type -p dracut)" ]; then
+  if ! dracut --list-modules 2>/dev/null | grep -q 'dmsquash-live'; then
+    echo "[MANQUANT] module dracut dmsquash-live"; ERRORS=$((ERRORS+1))
+  fi
+  if ! dracut --list-modules 2>/dev/null | grep -qw 'squash'; then
+    echo "[MANQUANT] module dracut squash"; ERRORS=$((ERRORS+1))
+  fi
+fi
 check xorriso
 if [ "$(mksquashfs 2>&1 | grep 'Xdict-size')" = "" ]; then
   echo "[MANQUANT] mksquashfs (ou sans support xz)"; ERRORS=$((ERRORS+1))

@@ -232,6 +232,17 @@ Der erkannte Paketmanager wird verwendet
 (apt, dnf, yum, pacman, zypper oder emerge)."
 L_DEPS_DONE="Installation abgeschlossen.
 Alle Abhängigkeiten sind vorhanden."
+L_DEPS_BLOCK_MSG="Installiere die Abhängigkeiten und starte erneut:
+
+  sudo respinguy-app-dep-force-install
+
+Ohne Paketmanager (LFS):
+
+  sudo /usr/share/ResPinGuy-File/respinguy-deps-source
+
+Zum erzwungenen Start:
+
+  RPG_SKIP_DEPS=1 respinguy"
 L_DEPS_PARTIAL="Installation abgeschlossen, aber einige Elemente fehlen noch.
 
 Starte die Prüfung erneut oder installiere sie manuell."

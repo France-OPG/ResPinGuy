@@ -37,14 +37,27 @@ cp -r ResPinGuy-File-Config/ /usr/share/ && echo "... [2/2]" || exit 1
 echo "Les fichiers sont installés."
 
 clear
-echo "Vérification des dépendances..."
-bash /usr/share/ResPinGuy-File/respinguy-app-dep
-if [ $? -ne 0 ]; then
+if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    echo "Distribution : ${PRETTY_NAME:-${NAME:-inconnue}}"
+fi
+echo "Installation des dépendances (détection automatique)..."
+if ! bash /usr/share/ResPinGuy-File/respinguy-app-dep-force-install; then
     echo ""
-    echo "[ATTENTION] Dépendances manquantes."
-    echo "Utilisez : /usr/share/ResPinGuy-File/respinguy-app-dep-force-install"
-else
+    echo "[ATTENTION] Aucun gestionnaire de paquets utilisable."
+    echo "Tentative de compilation depuis les sources (LFS / distribution indépendante)..."
+    bash /usr/share/ResPinGuy-File/respinguy-deps-source || true
+fi
+
+echo ""
+echo "Vérification des dépendances..."
+if bash /usr/share/ResPinGuy-File/respinguy-app-dep; then
     echo "---"
     echo "ResPinGuy est prêt. Lancez : respinguy"
     echo "---"
+else
+    echo ""
+    echo "[ERREUR] Dépendances manquantes."
+    echo "Corrigez-les puis relancez : sudo bash install"
+    exit 1
 fi

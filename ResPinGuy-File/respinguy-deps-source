@@ -1,0 +1,188 @@
+#!/bin/bash
+#_____________________________________________________________________________________________
+# ResPinGuy - Installation des dependances depuis les sources
+#
+# Pour les distributions sans gestionnaire de paquets (LFS, distributions
+# independantes). EXPERIMENTAL : necessite un compilateur C (cc/gcc), make,
+# tar, et wget ou curl.
+#
+# Les outils sont installes dans /usr/local.
+# GRUB n'est PAS compile ici (trop de dependances) : il reste necessaire
+# pour l'UEFI et pour l'installateur.
+#_____________________________________________________________________________________________
+
+PREFIX="/usr/local"
+WORK="/usr/local/src/respinguy-deps"
+LOG="$WORK/build.log"
+
+export PATH="$PREFIX/sbin:$PREFIX/bin:$PATH"
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig"
+export LDFLAGS="-L$PREFIX/lib"
+export CPPFLAGS="-I$PREFIX/include"
+export CFLAGS="${CFLAGS-} -I$PREFIX/include"
+
+J=$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
+
+say()  { printf '%s\n' "$*"; }
+warn() { printf '\n[ATTENTION] %s\n' "$*"; }
+die()  { printf '\n[ERREUR] %s\n' "$*" >&2; exit 1; }
+
+need_tool() { command -v "$1" >/dev/null 2>&1; }
+
+[ "0$UID" -eq 0 ] || die "Merci d'être en root."
+
+if ! need_tool cc && ! need_tool gcc; then
+    die "Aucun compilateur C (cc/gcc). Impossible de compiler les dépendances."
+fi
+need_tool make || die "make est manquant."
+need_tool tar  || die "tar est manquant."
+
+if need_tool wget; then
+    DOWNLOAD() { wget -q -O "$2" "$1"; }
+elif need_tool curl; then
+    DOWNLOAD() { curl -fsSL -o "$2" "$1"; }
+else
+    die "wget ou curl est nécessaire pour télécharger les sources."
+fi
+
+mkdir -p "$WORK" || die "Impossible de créer $WORK."
+cd "$WORK" || die "Impossible d'entrer dans $WORK."
+exec > >(tee -a "$LOG") 2>&1
+
+build_tool() {
+    local name="$1"
+    local url="$2"
+    local dir="$3"
+    local cmd="$4"
+
+    say "=== $name ==="
+    if [ -d "$WORK/$dir" ]; then
+        rm -rf "$WORK/$dir"
+    fi
+    if [ ! -f "$WORK/$name.tar" ]; then
+        DOWNLOAD "$url" "$WORK/$name.tar" || {
+            echo "[ERREUR] Téléchargement impossible : $url"
+            return 1
+        }
+    fi
+    tar -C "$WORK" -xf "$WORK/$name.tar" || {
+        echo "[ERREUR] Extraction impossible : $name.tar"
+        return 1
+    }
+    if ! ( cd "$WORK/$dir" && sh -c "$cmd" ) >> "$LOG" 2>&1; then
+        echo "[ERREUR] Compilation de $name (voir $LOG)"
+        tail -n 20 "$LOG"
+        return 1
+    fi
+    say "[OK] $name"
+    return 0
+}
+
+say "ResPinGuy - dépendances depuis les sources"
+say "Préfixe : $PREFIX"
+say "Journal : $LOG"
+say ""
+
+# zlib (si absent)
+if [ ! -f /usr/include/zlib.h ] && [ ! -f "$PREFIX/include/zlib.h" ]; then
+    build_tool zlib "https://zlib.net/zlib-1.3.1.tar.gz" "zlib-1.3.1" \
+        "./configure --prefix=$PREFIX && make -j$J && make install" || exit 1
+fi
+
+# xz (si absent)
+if [ ! -f /usr/include/lzma.h ] && [ ! -f "$PREFIX/include/lzma.h" ]; then
+    build_tool xz "https://tukaani.org/xz/xz-5.6.2.tar.gz" "xz-5.6.2" \
+        "./configure --prefix=$PREFIX --disable-static && make -j$J && make install" || exit 1
+fi
+
+# Rendre les bibliothèques de /usr/local visibles au linker
+ldconfig 2>/dev/null || true
+
+# squashfs-tools
+if ! need_tool mksquashfs; then
+    build_tool squashfs-tools \
+        "https://github.com/plougher/squashfs-tools/archive/refs/tags/4.6.1.tar.gz" \
+        "squashfs-tools-4.6.1" \
+        "make -C squashfs-tools -j$J && make -C squashfs-tools install" || exit 1
+fi
+
+# xorriso (libburn + libisofs + libisoburn)
+if ! need_tool xorriso; then
+    build_tool libburn "https://files.libburnia-project.org/releases/libburn-1.5.6.tar.gz" \
+        "libburn-1.5.6" \
+        "./configure --prefix=$PREFIX --disable-static && make -j$J && make install" || exit 1
+    build_tool libisofs "https://files.libburnia-project.org/releases/libisofs-1.5.6.tar.gz" \
+        "libisofs-1.5.6" \
+        "./configure --prefix=$PREFIX --disable-static && make -j$J && make install" || exit 1
+    build_tool libisoburn "https://files.libburnia-project.org/releases/libisoburn-1.5.6.tar.gz" \
+        "libisoburn-1.5.6" \
+        "./configure --prefix=$PREFIX --disable-static && make -j$J && make install" || exit 1
+fi
+
+# Les bibliothèques installées dans /usr/local/lib
+if [ -d /etc/ld.so.conf.d ]; then
+    echo "$PREFIX/lib" > /etc/ld.so.conf.d/usr-local.conf
+    ldconfig 2>/dev/null || true
+fi
+hash -r
+
+# dracut + module dmsquash-live
+if ! need_tool dracut || ! dracut --list-modules 2>/dev/null | grep -q 'dmsquash-live'; then
+    build_tool dracut \
+        "https://mirrors.edge.kernel.org/pub/linux/utils/boot/dracut/dracut-059.tar.gz" \
+        "dracut-059" \
+        "./configure --prefix=$PREFIX --libdir=$PREFIX/lib && make -j$J && make install" || exit 1
+    hash -r
+    if ! dracut --list-modules 2>/dev/null | grep -q 'dmsquash-live'; then
+        warn "dracut est installé mais le module dmsquash-live n'est pas trouvé."
+    fi
+fi
+
+# e2fsprogs (mkfs.ext4)
+if ! need_tool mkfs.ext4; then
+    build_tool e2fsprogs \
+        "https://mirrors.edge.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v1.47.1/e2fsprogs-1.47.1.tar.gz" \
+        "e2fsprogs-1.47.1" \
+        "./configure --prefix=$PREFIX --disable-nls --disable-elf-shlibs && make -j$J && make install" || exit 1
+fi
+
+# dosfstools
+if ! need_tool mkfs.vfat && ! need_tool mkfs.fat; then
+    build_tool dosfstools \
+        "https://github.com/dosfstools/dosfstools/releases/download/v4.2/dosfstools-4.2.tar.gz" \
+        "dosfstools-4.2" \
+        "./configure --prefix=$PREFIX && make -j$J && make install" || exit 1
+fi
+
+# mtools
+if ! need_tool mcopy; then
+    build_tool mtools "https://ftp.gnu.org/gnu/mtools/mtools-4.0.44.tar.gz" "mtools-4.0.44" \
+        "./configure --prefix=$PREFIX && make -j$J && make install" || exit 1
+fi
+
+# parted
+if ! need_tool parted; then
+    build_tool parted "https://ftp.gnu.org/gnu/parted/parted-3.6.tar.xz" "parted-3.6" \
+        "./configure --prefix=$PREFIX --disable-static --disable-device-mapper && make -j$J && make install" || exit 1
+fi
+
+hash -r
+
+say ""
+say "=== Résultat ==="
+for t in mksquashfs unsquashfs xorriso dracut mkfs.ext4 mkfs.vfat mkfs.fat mcopy parted; do
+    p=$(command -v "$t" 2>/dev/null)
+    if [ -n "$p" ]; then
+        say "OK   $t -> $p"
+    else
+        say "absent $t"
+    fi
+done
+
+warn "GRUB n'est pas compilé automatiquement. Il reste nécessaire pour l'UEFI et l'installateur."
+
+# Code de sortie : échec si les outils de build essentiels manquent
+for t in mksquashfs unsquashfs xorriso dracut; do
+    need_tool "$t" || exit 1
+done
+exit 0

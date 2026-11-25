@@ -43,6 +43,8 @@ install_pkg() {
                 dosfstools)     apt install -y dosfstools ;;
                 mtools)         apt install -y mtools ;;
                 parted)         apt install -y parted ;;
+                e2fsprogs)      apt install -y e2fsprogs ;;
+                whiptail)       apt install -y whiptail ;;
             esac ;;
         dnf|yum)
             case "$TOOL" in
@@ -59,6 +61,8 @@ install_pkg() {
                 dosfstools)     $PKG_MGR install -y dosfstools ;;
                 mtools)         $PKG_MGR install -y mtools ;;
                 parted)         $PKG_MGR install -y parted ;;
+                e2fsprogs)      $PKG_MGR install -y e2fsprogs ;;
+                whiptail)       $PKG_MGR install -y newt ;;
             esac ;;
         pacman)
             case "$TOOL" in
@@ -75,6 +79,8 @@ install_pkg() {
                 dosfstools)     pacman -S --noconfirm dosfstools ;;
                 mtools)         pacman -S --noconfirm mtools ;;
                 parted)         pacman -S --noconfirm parted ;;
+                e2fsprogs)      pacman -S --noconfirm e2fsprogs ;;
+                whiptail)       pacman -S --noconfirm libnewt ;;
             esac ;;
         zypper)
             case "$TOOL" in
@@ -91,6 +97,8 @@ install_pkg() {
                 dosfstools)     zypper install -y dosfstools ;;
                 mtools)         zypper install -y mtools ;;
                 parted)         zypper install -y parted ;;
+                e2fsprogs)      zypper install -y e2fsprogs ;;
+                whiptail)       zypper install -y newt ;;
             esac ;;
         emerge)
             case "$TOOL" in
@@ -107,6 +115,8 @@ install_pkg() {
                 dosfstools)     emerge sys-fs/dosfstools ;;
                 mtools)         emerge sys-fs/mtools ;;
                 parted)         emerge sys-block/parted ;;
+                e2fsprogs)      emerge sys-fs/e2fsprogs ;;
+                whiptail)       emerge dev-libs/newt ;;
             esac ;;
         unknown)
             echo "[ERREUR] Gestionnaire de paquets non reconnu."
@@ -189,6 +199,14 @@ if ! command -v parted >/dev/null 2>&1; then
     echo "Installation de parted..."
     install_pkg parted && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
 fi
+if ! command -v mkfs.ext4 >/dev/null 2>&1; then
+    echo "Installation de e2fsprogs..."
+    install_pkg e2fsprogs && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
+fi
+if ! command -v whiptail >/dev/null 2>&1 && ! command -v dialog >/dev/null 2>&1; then
+    echo "Installation de whiptail..."
+    install_pkg whiptail && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
+fi
 
 #_____________________________________________________________________________________________
 echo "---"
@@ -196,3 +214,4 @@ echo "$FIXED dépendance(s) installée(s)."
 [ $FAILED -gt 0 ] && echo "$FAILED dépendance(s) en échec. Installez-les manuellement."
 echo "Relancez : respinguy-app-dep pour vérifier."
 echo "---"
+[ $FAILED -eq 0 ] || exit 1
