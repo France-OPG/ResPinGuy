@@ -4,6 +4,14 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.37] - 2026-11-25
+
+### Modifié
+- `respinguy` installe automatiquement les dépendances manquantes **au
+  démarrage** : paquets via le gestionnaire de la distribution, puis compilation
+  depuis les sources si nécessaire. Il ne refuse de démarrer que si
+  l'installation échoue.
+
 ## [0.36] - 2026-11-25
 
 ### Modifié

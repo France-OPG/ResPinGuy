@@ -19,7 +19,7 @@ RPG_LANG_DIR="$RPG_FILE_DIR/lang"
 RPG_LANG="${RPG_LANG-}"
 RPG_BACKTITLE="ResPinGuy"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.36"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.37"
 
 # Palette officielle
 RPG_HEX_NAVY="#1d2f52"
@@ -1258,14 +1258,35 @@ case "${1-}" in
         exit 0 ;;
 esac
 
-# Refus de lancer l'interface si les dependances obligatoires manquent
+# Installation automatique des dependances manquantes au demarrage
 if [ -z "${RPG_SKIP_DEPS-}" ]; then
     RPG_DEPS_OUT=$(bash "$RPG_FILE_DIR/respinguy-app-dep" 2>&1)
-    if [ $? -ne 0 ]; then
-        ui_text "$L_DEPS_TITLE" "$RPG_DEPS_OUT
+    RPG_DEPS_RC=$?
+    if [ $RPG_DEPS_RC -ne 0 ] || printf '%s' "$RPG_DEPS_OUT" | grep -q 'OPTIONNEL'; then
+        clear
+        echo "ResPinGuy - dépendances manquantes"
+        echo "Installation automatique en cours..."
+        echo ""
+        if ! bash "$RPG_FILE_DIR/respinguy-app-dep-force-install"; then
+            echo ""
+            echo "Gestionnaire de paquets indisponible ou installation incomplète."
+            echo "Tentative de compilation depuis les sources..."
+            echo ""
+            bash "$RPG_FILE_DIR/respinguy-deps-source" || true
+        fi
+
+        detect_ui
+        RPG_DEPS_OUT=$(bash "$RPG_FILE_DIR/respinguy-app-dep" 2>&1)
+        if [ $? -ne 0 ]; then
+            ui_text "$L_DEPS_TITLE" "$RPG_DEPS_OUT
 
 $L_DEPS_BLOCK_MSG"
-        exit 1
+            exit 1
+        fi
+
+        echo ""
+        echo "Dépendances installées. Lancement de ResPinGuy..."
+        sleep 1
     fi
 fi
 

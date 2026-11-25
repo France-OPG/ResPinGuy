@@ -22,9 +22,10 @@
 
 - `sudo bash install` détecte la distribution et installe automatiquement les
   paquets manquants (apt, dnf, yum, pacman, zypper, emerge).
-- `sudo respinguy` refuse de démarrer tant qu'une dépendance obligatoire manque.
-  Le message indique la commande à lancer. Contournement :
-  `RPG_SKIP_DEPS=1 respinguy`.
+- Au démarrage, `respinguy` installe automatiquement les dépendances manquantes :
+  paquets via le gestionnaire de la distribution, puis compilation depuis les
+  sources si nécessaire. Il ne refuse de démarrer que si l'installation échoue
+  (contournement : `RPG_SKIP_DEPS=1 respinguy`).
 - Les outils de l'installateur (`parted`, `unsquashfs`, `mkfs.ext4`, `blkid`,
   `tar`, `mkfs.vfat`/`mkfs.fat`, `grub-install`, `grub-mkconfig`) sont
   **obligatoires**.

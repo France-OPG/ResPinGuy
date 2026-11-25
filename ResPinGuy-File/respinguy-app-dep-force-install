@@ -9,6 +9,8 @@ allow_only_root() {
 }
 allow_only_root
 
+export DEBIAN_FRONTEND=noninteractive
+
 #_____________________________________________________________________________________________
 # Détection du gestionnaire de paquets
 detect_pkg_manager() {

@@ -14,7 +14,7 @@ RPG_LOG="/tmp/respinguy-install.log"
 RPG_TARGET="/mnt/respinguy-target"
 CHROOT_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.36"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.37"
 
 say()  { printf '%s\n' "$*"; }
 warn() { printf '\n[ATTENTION] %s\n' "$*"; }
