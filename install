@@ -18,20 +18,22 @@ for f in ./ResPinGuy-CMD/respinguy \
           ./ResPinGuy-CMD/respinguy-config \
           ./ResPinGuy-CMD/respinguy-app-dep \
           ./ResPinGuy-CMD/respinguy-app-dep-force-install \
-          ./ResPinGuy-CMD/respinguy-install; do
+          ./ResPinGuy-CMD/respinguy-install \
+          ./ResPinGuy-CMD/rpg-install; do
     if [ ! -f "$f" ]; then echo "[ERREUR] Fichier manquant : $f"; exit 1; fi
 done
 
 read -p "Appuyez sur Entrée pour lancer l'installation..."
 
-cp ./ResPinGuy-CMD/respinguy /usr/bin/         && chmod +x /usr/bin/respinguy         && echo "... [1/8]" || exit 1
-cp ./ResPinGuy-CMD/respinguy-app-rm /usr/bin/  && chmod +x /usr/bin/respinguy-app-rm  && echo "... [2/8]" || exit 1
-cp ./ResPinGuy-CMD/respinguy-app-up /usr/bin/  && chmod +x /usr/bin/respinguy-app-up  && echo "... [3/8]" || exit 1
-cp ./ResPinGuy-CMD/respinguy-build /usr/bin/   && chmod +x /usr/bin/respinguy-build   && echo "... [4/8]" || exit 1
-cp ./ResPinGuy-CMD/respinguy-config /usr/bin/  && chmod +x /usr/bin/respinguy-config  && echo "... [5/8]" || exit 1
-cp ./ResPinGuy-CMD/respinguy-app-dep /usr/bin/ && chmod +x /usr/bin/respinguy-app-dep && echo "... [6/8]" || exit 1
-cp ./ResPinGuy-CMD/respinguy-app-dep-force-install /usr/bin/ && chmod +x /usr/bin/respinguy-app-dep-force-install && echo "... [7/8]" || exit 1
-cp ./ResPinGuy-CMD/respinguy-install /usr/bin/ && chmod +x /usr/bin/respinguy-install && echo "... [8/8]" || exit 1
+cp ./ResPinGuy-CMD/respinguy /usr/bin/         && chmod +x /usr/bin/respinguy         && echo "... [1/9]" || exit 1
+cp ./ResPinGuy-CMD/respinguy-app-rm /usr/bin/  && chmod +x /usr/bin/respinguy-app-rm  && echo "... [2/9]" || exit 1
+cp ./ResPinGuy-CMD/respinguy-app-up /usr/bin/  && chmod +x /usr/bin/respinguy-app-up  && echo "... [3/9]" || exit 1
+cp ./ResPinGuy-CMD/respinguy-build /usr/bin/   && chmod +x /usr/bin/respinguy-build   && echo "... [4/9]" || exit 1
+cp ./ResPinGuy-CMD/respinguy-config /usr/bin/  && chmod +x /usr/bin/respinguy-config  && echo "... [5/9]" || exit 1
+cp ./ResPinGuy-CMD/respinguy-app-dep /usr/bin/ && chmod +x /usr/bin/respinguy-app-dep && echo "... [6/9]" || exit 1
+cp ./ResPinGuy-CMD/respinguy-app-dep-force-install /usr/bin/ && chmod +x /usr/bin/respinguy-app-dep-force-install && echo "... [7/9]" || exit 1
+cp ./ResPinGuy-CMD/respinguy-install /usr/bin/ && chmod +x /usr/bin/respinguy-install && echo "... [8/9]" || exit 1
+cp ./ResPinGuy-CMD/rpg-install /usr/bin/ && chmod +x /usr/bin/rpg-install && echo "... [9/9]" || exit 1
 echo "Les commandes sont installées."
 
 cp -r ResPinGuy-File/ /usr/share/        && echo "... [1/2]" || exit 1

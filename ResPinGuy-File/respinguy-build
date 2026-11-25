@@ -3,6 +3,31 @@
 # ResPinGuy - Build
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin${PATH:+:$PATH}"
 
+# Couleurs (meme palette que l'interface)
+if [ -n "${RPG_FORCE_COLOR-}" ] || [ -t 1 ]; then
+    C_RESET=$'\033[0m'
+    C_GREEN=$'\033[38;2;115;186;37m'
+    C_AMBER=$'\033[38;2;255;181;22m'
+    C_BLUE=$'\033[38;2;29;47;82m'
+    C_RED=$'\033[38;2;238;0;0m'
+else
+    C_RESET=""; C_GREEN=""; C_AMBER=""; C_BLUE=""; C_RED=""
+fi
+
+# Barre de progression par etapes
+rpg_step() {
+    local pct="$1"
+    local msg="$2"
+    local width=30 fill empty bar
+    fill=$((pct * width / 100))
+    empty=$((width - fill))
+    bar=$(printf '%*s' "$fill" '' | tr ' ' '#')
+    bar="$bar$(printf '%*s' "$empty" '')"
+    printf '%s[%s%s%s]%s %3d%%  %s%s%s\n' \
+        "$C_BLUE" "$C_GREEN" "$bar" "$C_BLUE" "$C_RESET" \
+        "$pct" "$C_AMBER" "$msg" "$C_RESET"
+}
+
 allow_only_root() {
   if [ "0$UID" -ne 0 ]; then
      echo "Merci d'être en root pour lancer : $(basename $0)"; exit 1
@@ -117,7 +142,8 @@ if [ "$RPG_UEFI" -eq 0 ]; then
     echo "            openSUSE      : zypper install grub2-x86_64-efi dosfstools mtools"
 fi
 rm -rf /respinguy-build-dir/
-read -p "Appuyez sur Entrée pour lancer le build..."
+echo "Démarrage dans 1 seconde..."
+sleep 1
 
 cd / || exit 1
 mkdir -p /respinguy-build-dir/LiveOS
@@ -133,7 +159,7 @@ else
     tar -C / -cpf /respinguy-build-dir/LiveOS/etc-original.tar etc
 fi
 
-echo "Copie des fichiers ISO..."
+rpg_step 10 "Préparation de l'arborescence"
 cp -r /usr/share/ResPinGuy-File/fichier/iso/isolinux/. /respinguy-build-dir/isolinux/
 cp /usr/share/ResPinGuy-File-Config/bootimg.png /respinguy-build-dir/isolinux/
 
@@ -169,8 +195,8 @@ else
 fi
 
 cp "$VMLINUZ" /respinguy-build-dir/vmlinuz || { echo "[ERREUR] Copie kernel impossible."; exit 1; }
-echo "Kernel copié."
-read -p "Appuyez sur Entrée pour continuer..."
+rpg_step 20 "Noyau copié"
+sleep 1
 clear
 
 if [ -n "$RPGCONFIGUSER" ]; then
@@ -184,7 +210,7 @@ fi
 # On copie /etc dans un dossier temporaire et on y remplace fstab.
 # Le système source n'est JAMAIS modifié.
 # mksquashfs reçoit le dossier /etc temporaire à la place du vrai /etc.
-echo "Préparation du /etc live (fstab)..."
+rpg_step 30 "Préparation du /etc live"
 RPG_ETC_ROOT=$(mktemp -d /tmp/rpg-live.XXXXXX)
 RPG_ETC_TMP="$RPG_ETC_ROOT/etc"
 mkdir -p "$RPG_ETC_TMP"
@@ -205,6 +231,88 @@ FSTABEOF
 [ -f "$RPG_ETC_TMP/machine-id" ] && : > "$RPG_ETC_TMP/machine-id"
 
 echo "[OK] /etc live préparé dans $RPG_ETC_TMP"
+
+#_____________________________________________________________________________________________
+# LIVE : autologin sans mot de passe + sudo NOPASSWD
+# Ces modifications ne concernent que le live : l'installateur restaure le /etc
+# d'origine (etc-original.tar) sur le disque cible.
+if [ -f "$RPG_ETC_TMP/passwd" ]; then
+    RPG_LIVE_USER=$(awk -F: '$3 == 1000 { print $1; exit }' "$RPG_ETC_TMP/passwd")
+    [ -n "$RPG_LIVE_USER" ] || RPG_LIVE_USER=$(awk -F: '$3 >= 1000 && $3 < 65534 { print $1; exit }' "$RPG_ETC_TMP/passwd")
+    [ -n "$RPG_LIVE_USER" ] || RPG_LIVE_USER="root"
+
+    if grep -q "^$RPG_LIVE_USER:" "$RPG_ETC_TMP/shadow" 2>/dev/null; then
+        sed -i "s/^$RPG_LIVE_USER:[^:]*:/$RPG_LIVE_USER::/" "$RPG_ETC_TMP/shadow"
+    fi
+
+    mkdir -p "$RPG_ETC_TMP/sudoers.d"
+    printf '%s ALL=(ALL) NOPASSWD: ALL\n' "$RPG_LIVE_USER" > "$RPG_ETC_TMP/sudoers.d/99-respinguy-live"
+    chmod 0440 "$RPG_ETC_TMP/sudoers.d/99-respinguy-live"
+
+    HAS_DM=0
+    [ -f "$RPG_ETC_TMP/X11/default-display-manager" ] && HAS_DM=1
+    [ -d "$RPG_ETC_TMP/gdm3" ] && HAS_DM=1
+    [ -d "$RPG_ETC_TMP/gdm" ] && HAS_DM=1
+    [ -d "$RPG_ETC_TMP/lightdm" ] && HAS_DM=1
+    [ -f "$RPG_ETC_TMP/sddm.conf" ] && HAS_DM=1
+    [ -d "$RPG_ETC_TMP/sddm.conf.d" ] && HAS_DM=1
+
+    for d in gdm3 gdm; do
+        [ -d "$RPG_ETC_TMP/$d" ] || continue
+        f="$RPG_ETC_TMP/$d/custom.conf"
+        [ -f "$f" ] || printf '[daemon]\n' > "$f"
+        grep -q '^\[daemon\]' "$f" || printf '\n[daemon]\n' >> "$f"
+        if grep -q '^AutomaticLoginEnable=' "$f"; then
+            sed -i 's/^AutomaticLoginEnable=.*/AutomaticLoginEnable=true/' "$f"
+        else
+            sed -i '/^\[daemon\]/a AutomaticLoginEnable=true' "$f"
+        fi
+        if grep -q '^AutomaticLogin=' "$f"; then
+            sed -i "s/^AutomaticLogin=.*/AutomaticLogin=$RPG_LIVE_USER/" "$f"
+        else
+            sed -i "/^\[daemon\]/a AutomaticLogin=$RPG_LIVE_USER" "$f"
+        fi
+    done
+
+    if [ -d "$RPG_ETC_TMP/lightdm" ]; then
+        f="$RPG_ETC_TMP/lightdm/lightdm.conf"
+        [ -f "$f" ] || : > "$f"
+        grep -q '^\[Seat:\*\]' "$f" || printf '\n[Seat:*]\n' >> "$f"
+        if grep -q '^autologin-user=' "$f"; then
+            sed -i "s/^autologin-user=.*/autologin-user=$RPG_LIVE_USER/" "$f"
+        else
+            sed -i "/^\[Seat:\*\]/a autologin-user=$RPG_LIVE_USER" "$f"
+        fi
+        if grep -q '^autologin-user-timeout=' "$f"; then
+            sed -i 's/^autologin-user-timeout=.*/autologin-user-timeout=0/' "$f"
+        else
+            sed -i '/^\[Seat:\*\]/a autologin-user-timeout=0' "$f"
+        fi
+    fi
+
+    if [ -f "$RPG_ETC_TMP/sddm.conf" ] || [ -d "$RPG_ETC_TMP/sddm.conf.d" ]; then
+        mkdir -p "$RPG_ETC_TMP/sddm.conf.d"
+        printf '[Autologin]\nUser=%s\n' "$RPG_LIVE_USER" > "$RPG_ETC_TMP/sddm.conf.d/99-respinguy-autologin.conf"
+    fi
+
+    if [ "$HAS_DM" -eq 0 ]; then
+        mkdir -p "$RPG_ETC_TMP/systemd/system/getty@tty1.service.d"
+        cat > "$RPG_ETC_TMP/systemd/system/getty@tty1.service.d/autologin.conf" <<EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin $RPG_LIVE_USER --noclear %I \$TERM
+EOF
+    fi
+
+    mkdir -p "$RPG_ETC_TMP/profile.d"
+    cat > "$RPG_ETC_TMP/profile.d/99-respinguy-live.sh" <<EOF
+# ResPinGuy live : "install" lance l'installateur
+install() { sudo rpg-install "\$@"; }
+EOF
+    chmod 0644 "$RPG_ETC_TMP/profile.d/99-respinguy-live.sh"
+
+    echo "[INFO] Live : utilisateur $RPG_LIVE_USER (autologin, sans mot de passe)"
+fi
 
 # Désactivation des services bloquants en mode live
 # systemd cherche les overrides dans /etc/systemd/system/ EN PRIORITÉ sur /lib/systemd/system/
@@ -327,7 +435,7 @@ echo "[OK] Services bloquants désactivés pour le live."
 #_____________________________________________________________________________________________
 # CONSTRUCTION DE LA LISTE DES DOSSIERS POUR mksquashfs
 # On remplace /etc par le dossier temporaire dans la liste des sources.
-echo "Création du squashfs..."
+rpg_step 45 "Création du squashfs"
 SQSFDIR=""
 for i in $ROOTDIR; do
     if [ "$i" = "etc" ]; then
@@ -377,25 +485,25 @@ if [ $SQUASHFS_RESULT -ne 0 ]; then
     exit 1
 fi
 
-echo "Squashfs créé : $(du -sh /respinguy-build-dir/LiveOS/squashfs.img | cut -f1)"
-read -p "Appuyez sur Entrée pour continuer..."
+rpg_step 60 "Squashfs créé : $(du -sh /respinguy-build-dir/LiveOS/squashfs.img | cut -f1)"
+sleep 1
 
 if [ -n "$RPGCONFIGUSER" ]; then
     bash /usr/share/ResPinGuy-File/script/rcurm
 fi
 
 #_____________________________________________________________________________________________
-echo "Création de l'initrd..."
+rpg_step 70 "Création de l'initrd"
 dracut -N -a dmsquash-live --kver "$KERNEL" /respinguy-build-dir/initrd --force
 
 if [ $? -ne 0 ]; then echo "[ERREUR] Échec de la création de l'initrd."; exit 1; fi
-echo "initrd créé : $(du -sh /respinguy-build-dir/initrd | cut -f1)"
-read -p "Appuyez sur Entrée pour continuer..."
+rpg_step 80 "Initrd créé : $(du -sh /respinguy-build-dir/initrd | cut -f1)"
+sleep 1
 
 #_____________________________________________________________________________________________
 # Demarrage UEFI (GRUB)
 if [ "$RPG_UEFI" -eq 1 ]; then
-    echo "Préparation du démarrage UEFI..."
+    rpg_step 85 "Préparation du démarrage UEFI"
     mkdir -p /respinguy-build-dir/boot
     cat > /respinguy-build-dir/grub.cfg <<EOF
 set timeout=30
@@ -439,10 +547,10 @@ EOF
     fi
 fi
 
-read -p "Appuyez sur Entrée pour continuer..."
+sleep 1
 
 #_____________________________________________________________________________________________
-echo "Création de l'image ISO..."
+rpg_step 90 "Création de l'image ISO"
 cd / || exit 1
 XORRISO_UEFI=()
 if [ "$RPG_UEFI" -eq 1 ]; then
@@ -462,7 +570,7 @@ if [ $? -ne 0 ]; then echo "[ERREUR] Échec de la création de l'ISO."; exit 1; 
 
 clear
 echo "_ _ _"
-echo "Build terminé avec succès !"
+rpg_step 100 "Build terminé avec succès !"
 echo "ISO : $RPGHOME/$RPGBUILDNAME-$ARCH.iso"
 echo "Taille : $(du -sh "$RPGHOME/$RPGBUILDNAME-$ARCH.iso" | cut -f1)"
 if [ "$RPG_UEFI" -eq 1 ]; then

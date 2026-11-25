@@ -23,6 +23,11 @@ L_MENU_BUILD="ISO-Abbild erstellen"
 L_MENU_CONFIG="Konfiguration"
 L_MENU_SETTINGS="Einstellungen & Info"
 L_MENU_INSTALL="Auf Datenträger installieren"
+L_LIVE_ONLY_INSTALL="Live-Modus: nur der Installer ist verfügbar.
+
+Starte:
+
+  rpg-install"
 L_INSTALL_WARN_B="Der Assistent installiert das System auf einen Datenträger.
 
 Der gewählte Datenträger wird vollständig gelöscht.
@@ -314,7 +319,7 @@ BEFEHLE
                           Fehlende Abhängigkeiten installieren
   respinguy-app-up        ResPinGuy aktualisieren
   respinguy-app-rm        ResPinGuy entfernen
-  respinguy-install       System installieren (nur Live)
+  rpg-install             System installieren (nur Live)
 
 DATEIEN
   /usr/share/ResPinGuy-File-Config/respinguy-config

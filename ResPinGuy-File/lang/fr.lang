@@ -24,6 +24,11 @@ L_MENU_BUILD="Créer l'image ISO"
 L_MENU_CONFIG="Configuration"
 L_MENU_SETTINGS="Paramètres et info"
 L_MENU_INSTALL="Installer sur le disque"
+L_LIVE_ONLY_INSTALL="Mode live : seule l'installation est disponible.
+
+Lancez :
+
+  rpg-install"
 L_INSTALL_WARN_B="L'assistant va installer le système sur un disque.
 
 Le disque choisi sera entièrement effacé.
@@ -315,7 +320,7 @@ COMMANDES
                           Installer les dépendances manquantes
   respinguy-app-up        Mettre à jour ResPinGuy
   respinguy-app-rm        Supprimer ResPinGuy
-  respinguy-install       Installer le système (live uniquement)
+  rpg-install             Installer le système (live uniquement)
 
 FICHIERS
   /usr/share/ResPinGuy-File-Config/respinguy-config

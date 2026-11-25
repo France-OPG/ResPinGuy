@@ -21,7 +21,7 @@ RPG_LANG_DIR="$RPG_FILE_DIR/lang"
 RPG_LANG="${RPG_LANG-}"
 RPG_BACKTITLE="ResPinGuy"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.38"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.39"
 
 # Palette officielle
 RPG_HEX_NAVY="#1d2f52"
@@ -1259,6 +1259,12 @@ case "${1-}" in
         action_help
         exit 0 ;;
 esac
+
+# En live, seule l'installation est autorisee
+if rpg_is_live; then
+    ui_error "$L_MENU_INSTALL" "$L_LIVE_ONLY_INSTALL"
+    exit 1
+fi
 
 # Installation automatique des dependances manquantes au demarrage
 if [ -z "${RPG_SKIP_DEPS-}" ]; then

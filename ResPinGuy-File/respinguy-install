@@ -11,16 +11,41 @@
 
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin${PATH:+:$PATH}"
 
+# Couleurs (meme palette que l'interface)
+if [ -n "${RPG_FORCE_COLOR-}" ] || [ -t 1 ]; then
+    C_RESET=$'\033[0m'
+    C_GREEN=$'\033[38;2;115;186;37m'
+    C_AMBER=$'\033[38;2;255;181;22m'
+    C_BLUE=$'\033[38;2;29;47;82m'
+    C_RED=$'\033[38;2;238;0;0m'
+else
+    C_RESET=""; C_GREEN=""; C_AMBER=""; C_BLUE=""; C_RED=""
+fi
+
+# Barre de progression
+rpg_i_step() {
+    local pct="$1"
+    local msg="$2"
+    local width=30 fill empty bar
+    fill=$((pct * width / 100))
+    empty=$((width - fill))
+    bar=$(printf '%*s' "$fill" '' | tr ' ' '#')
+    bar="$bar$(printf '%*s' "$empty" '')"
+    printf '%s[%s%s%s]%s %3d%%  %s%s%s\n' \
+        "$C_BLUE" "$C_GREEN" "$bar" "$C_BLUE" "$C_RESET" \
+        "$pct" "$C_AMBER" "$msg" "$C_RESET"
+}
+
 RPG_FILE_DIR="/usr/share/ResPinGuy-File"
 RPG_LOG="/tmp/respinguy-install.log"
 RPG_TARGET="/mnt/respinguy-target"
 CHROOT_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.38"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.39"
 
 say()  { printf '%s\n' "$*"; }
-warn() { printf '\n[ATTENTION] %s\n' "$*"; }
-die()  { printf '\n[ERREUR] %s\n' "$*" >&2; exit 1; }
+warn() { printf '\n%s[ATTENTION] %s%s\n' "$C_AMBER" "$*" "$C_RESET"; }
+die()  { printf '\n%s[ERREUR] %s%s\n' "$C_RED" "$*" "$C_RESET" >&2; exit 1; }
 
 ask() {
     local prompt="$1"
@@ -185,7 +210,7 @@ c=$(ask "Tapez EFFACER pour confirmer : ")
 # Partitionnement
 
 say ""
-say "Partitionnement de $DISK..."
+rpg_i_step 10 "Partitionnement de $DISK"
 wipefs -a "$DISK" >/dev/null 2>&1 || true
 
 if [ "$UEFI" -eq 1 ]; then
@@ -209,7 +234,7 @@ udevadm settle 2>/dev/null || sleep 2
 #----------------------------------------------------------------------------------------------
 # Formatage
 
-say "Formatage de la racine (ext4)..."
+rpg_i_step 25 "Formatage de la racine (ext4)"
 mkfs.ext4 -F -L RESPINGUY_ROOT "$ROOT_PART" || die "Échec du formatage ext4."
 
 if [ "$UEFI" -eq 1 ]; then
@@ -223,13 +248,13 @@ fi
 mkdir -p "$RPG_TARGET"
 mount "$ROOT_PART" "$RPG_TARGET" || die "Impossible de monter $ROOT_PART."
 
-say "Extraction du système (cela peut prendre plusieurs minutes)..."
+rpg_i_step 40 "Extraction du système"
 unsquashfs -f -d "$RPG_TARGET" "$SQUASHFS" || die "Échec de l'extraction du squashfs."
 
 # Le squashfs contient le /etc du live (fstab tmpfs, services masqués...).
 # On restaure le /etc d'origine sauvegarde par le build.
 if [ -f "$ETC_TAR" ]; then
-    say "Restauration du /etc d'origine..."
+    rpg_i_step 55 "Restauration du /etc d'origine"
     rm -rf "$RPG_TARGET/etc"
     if ! tar -C "$RPG_TARGET" -xpf "$ETC_TAR" --xattrs --acls 2>/dev/null; then
         tar -C "$RPG_TARGET" -xpf "$ETC_TAR" || die "Échec de la restauration de /etc."
@@ -251,6 +276,7 @@ fi
 
 #----------------------------------------------------------------------------------------------
 # fstab, hostname, identifiants
+rpg_i_step 65 "Configuration (fstab, hostname)"
 
 ROOT_UUID=$(blkid -s UUID -o value "$ROOT_PART") || die "Impossible de lire l'UUID de la racine."
 {
@@ -301,7 +327,7 @@ else
     die "GRUB n'est pas installé dans le système source. Installez-le avant de créer l'ISO."
 fi
 
-say "Installation de GRUB ($BOOT_MODE)..."
+rpg_i_step 75 "Installation de GRUB ($BOOT_MODE)"
 if [ "$UEFI" -eq 1 ]; then
     env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" "$GRUB_INSTALL" --target=x86_64-efi \
         --efi-directory=/boot/efi --bootloader-id=ResPinGuy --recheck \
@@ -321,7 +347,7 @@ else
 fi
 env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" "$GRUB_MKCONFIG" -o "$GRUB_CFG" || warn "Échec de la génération de grub.cfg."
 
-say "Régénération de l'initramfs..."
+rpg_i_step 85 "Régénération de l'initramfs"
 if env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v update-initramfs >/dev/null 2>&1'; then
     env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" update-initramfs -u -k all || warn "Échec de update-initramfs."
 elif env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v mkinitcpio >/dev/null 2>&1'; then
@@ -349,6 +375,7 @@ fi
 #----------------------------------------------------------------------------------------------
 # Mots de passe
 
+rpg_i_step 90 "Mots de passe"
 say ""
 if yesno "Définir un mot de passe pour root ? [o/N] "; then
     env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" passwd root || warn "Échec du changement de mot de passe root."
@@ -371,6 +398,7 @@ fi
 cp "$RPG_LOG" "$RPG_TARGET/var/log/respinguy-install.log" 2>/dev/null || true
 
 say ""
+rpg_i_step 100 "Installation terminée"
 say "=============================================="
 say " Installation terminée."
 say " Disque   : $DISK"

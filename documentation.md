@@ -49,6 +49,18 @@ sudo env PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" res
 
 Ou lancez un vrai shell root (`su -`) plutôt que `su`.
 
+### Confort et mode live
+
+- Le build ne demande plus d'appuyer sur Entrée : chaque étape attend 1 seconde.
+- Barres de progression colorées pendant le build et l'installation.
+- Les commandes demandent automatiquement le mot de passe sudo si l'utilisateur
+  est sudoers (plus besoin de lancer un shell root).
+- En mode live, `respinguy` refuse de démarrer : seule l'installation est
+  disponible via `rpg-install` (ou `install` dans le shell du live).
+- Le live démarre sans mot de passe : autologin du compte principal, mot de
+  passe vide et `sudo` sans mot de passe. Ces réglages ne concernent que le
+  live ; le `/etc` d'origine est restauré sur le disque installé.
+
 
 ### Interface interactive
 

@@ -1,6 +1,8 @@
 #!/bin/bash
-allow_only_root() {
-  if [ "0$UID" -ne 0 ]; then echo "Merci d'être en root pour lancer : $(basename $0)"; exit 1; fi
-}
-allow_only_root
-exec bash /usr/share/ResPinGuy-File/respinguy-install
+if [ "0$UID" -ne 0 ]; then
+    if command -v sudo >/dev/null 2>&1; then
+        exec sudo bash /usr/share/ResPinGuy-File/respinguy-install "$@"
+    fi
+    echo "Merci d'être en root pour lancer : $(basename "$0")"; exit 1
+fi
+exec bash /usr/share/ResPinGuy-File/respinguy-install "$@"

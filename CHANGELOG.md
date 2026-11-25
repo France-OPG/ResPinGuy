@@ -4,6 +4,21 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.39] - 2026-11-25
+
+### Ajouté
+- Build sans appuyer sur Entrée : les pauses sont remplacées par une attente
+  d'une seconde.
+- Barres de progression colorées (même palette) pendant le build et
+  l'installateur, avec les étapes et les pourcentages.
+- Auto-sudo : `respinguy` et ses commandes demandent directement le mot de passe
+  sudo au lieu d'exiger un shell root.
+- Mode live : seule l'installation est autorisée. Nouvelle commande
+  `rpg-install` (et fonction `install` dans le shell du live).
+- Live sans mot de passe : autologin du compte principal, mot de passe vide et
+  `sudo` sans mot de passe (live uniquement ; le `/etc` d'origine est restauré
+  à l'installation).
+
 ## [0.38] - 2026-11-25
 
 ### Corrigé
