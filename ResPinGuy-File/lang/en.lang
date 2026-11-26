@@ -27,7 +27,7 @@ L_LIVE_ONLY_INSTALL="Live mode: only the installer is available.
 
 Run:
 
-  rpg-install"
+  install"
 L_INSTALL_WARN_B="The assistant will install the system to a disk.
 
 The selected disk will be completely erased.
@@ -225,6 +225,7 @@ L_BUILD_FAIL_T="Build interrupted"
 L_BUILD_FAIL_B="The build stopped with code %s.
 
 Check the messages displayed in the terminal."
+L_VIEW_LOG="View the log?"
 
 # Dependencies
 L_DEPS_TITLE="Dependencies"
@@ -319,7 +320,7 @@ COMMANDS
                           Install missing dependencies
   respinguy-app-up        Update ResPinGuy
   respinguy-app-rm        Remove ResPinGuy
-  rpg-install             Install the system (live only)
+  install                 Install the system (live only)
 
 FILES
   /usr/share/ResPinGuy-File-Config/respinguy-config

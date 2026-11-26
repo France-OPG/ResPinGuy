@@ -52,11 +52,16 @@ Ou lancez un vrai shell root (`su -`) plutôt que `su`.
 ### Confort et mode live
 
 - Le build ne demande plus d'appuyer sur Entrée : chaque étape attend 1 seconde.
+- Pendant le build, la progression (barre + étape) s'affiche dans l'interface ;
+  le script tourne en arrière-plan et le journal est accessible en cas d'erreur.
 - Barres de progression colorées pendant le build et l'installation.
+- L'installateur utilise une interface whiptail/dialog (même thème) : sélection
+  du disque par menu, confirmations, nom de machine et mots de passe, puis
+  progression (l'installation tourne en arrière-plan) et journal en cas d'erreur.
 - Les commandes demandent automatiquement le mot de passe sudo si l'utilisateur
   est sudoers (plus besoin de lancer un shell root).
 - En mode live, `respinguy` refuse de démarrer : seule l'installation est
-  disponible via `rpg-install` (ou `install` dans le shell du live).
+  disponible via `install` (ou `rpg-install`).
 - Le live démarre sans mot de passe : autologin du compte principal, mot de
   passe vide et `sudo` sans mot de passe. Ces réglages ne concernent que le
   live ; le `/etc` d'origine est restauré sur le disque installé.
@@ -178,8 +183,10 @@ Limites physiques :
 
 ### Installateur (live uniquement)
 
-Depuis le live, la commande `respinguy-install` (ou l'entrée « Installer sur le
-disque » de l'interface) installe le système sur un disque.
+Depuis le live, la commande `install` (ou l'entrée « Installer sur le
+disque » de l'interface) installe le système sur un disque. Hors live,
+`install` reste la commande système standard (coreutils) : le détournement
+n'agit qu'en mode live.
 
 - Lancement uniquement si le système a démarré en live (`root=live:` / `rd.live.image`).
 - Prérequis obligatoires : `parted`, `unsquashfs`, `mkfs.ext4`, `blkid`, `tar`,
@@ -225,6 +232,10 @@ Supprimer respinguy :
 ```bash
 sudo respinguy-app-rm
 ```
+Installer le système (live uniquement) :
+```bash
+sudo install
+```
 
 ### (Version root) Liste des commandes avec leurs fonction :
 
@@ -251,6 +262,10 @@ respinguy-app-dep
 Supprimer respinguy :
 ```bash
 respinguy-app-rm
+```
+Installer le système (live uniquement) :
+```bash
+install
 ```
 
 &copy; 2023 [ResPinGuy](https://respinguy.fopg.fr/)

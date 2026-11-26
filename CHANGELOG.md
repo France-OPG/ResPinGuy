@@ -4,6 +4,26 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.40] - 2026-11-26
+
+### Ajouté
+- Build intégré à l'interface : le script tourne en arrière-plan, la progression
+  (barre + étape) s'affiche dans la TUI, et le journal est accessible en cas
+  d'erreur.
+- Installateur avec interface whiptail/dialog (même thème) : sélection du disque
+  par menu, confirmations, nom de machine et mots de passe, puis progression
+  dans l'interface (l'installation tourne en arrière-plan) et journal
+  consultable en cas d'erreur.
+- En live, la commande `install` lance l'installateur (aussi disponible en
+  shell interactif via bash/zsh). `respinguy-install` n'est plus installé ;
+  `rpg-install` reste comme raccourci.
+
+### Modifié
+- L'installateur n'utilise plus un `tee` global (compatible whiptail) ; les
+  sorties des commandes longues vont dans le journal.
+- Hors live, `install` reste la commande système (coreutils) : le wrapper
+  `/usr/local/bin/install` ne détourne l'installation que dans le live.
+
 ## [0.39] - 2026-11-25
 
 ### Ajouté

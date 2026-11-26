@@ -1,0 +1,30 @@
+#!/bin/bash
+#----------------------------------------------------------------------------------------------
+# ResPinGuy - commande « install »
+#
+# En live : lance l'installateur ResPinGuy.
+# Hors live : se comporte exactement comme la commande système install (coreutils).
+#----------------------------------------------------------------------------------------------
+
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin${PATH:+:$PATH}"
+
+RPG_LIVE=0
+grep -qE '(^| )root=live:|(^| )rd\.live\.image' /proc/cmdline 2>/dev/null && RPG_LIVE=1
+[ -f /run/initramfs/live/LiveOS/squashfs.img ] && RPG_LIVE=1
+
+if [ "$RPG_LIVE" -ne 1 ]; then
+    if [ -x /usr/bin/install ]; then
+        exec /usr/bin/install "$@"
+    fi
+    exec /bin/install "$@"
+fi
+
+if [ "0$UID" -ne 0 ]; then
+    if command -v sudo >/dev/null 2>&1; then
+        exec sudo bash /usr/share/ResPinGuy-File/respinguy-install "$@"
+    fi
+    echo "Merci d'être en root pour lancer l'installation."
+    exit 1
+fi
+
+exec bash /usr/share/ResPinGuy-File/respinguy-install "$@"

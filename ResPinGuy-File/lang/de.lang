@@ -27,7 +27,7 @@ L_LIVE_ONLY_INSTALL="Live-Modus: nur der Installer ist verfügbar.
 
 Starte:
 
-  rpg-install"
+  install"
 L_INSTALL_WARN_B="Der Assistent installiert das System auf einen Datenträger.
 
 Der gewählte Datenträger wird vollständig gelöscht.
@@ -225,6 +225,7 @@ L_BUILD_FAIL_T="Build abgebrochen"
 L_BUILD_FAIL_B="Der Build wurde mit Code %s beendet.
 
 Prüfe die im Terminal angezeigten Meldungen."
+L_VIEW_LOG="Protokoll anzeigen?"
 
 # Abhängigkeiten
 L_DEPS_TITLE="Abhängigkeiten"
@@ -319,7 +320,7 @@ BEFEHLE
                           Fehlende Abhängigkeiten installieren
   respinguy-app-up        ResPinGuy aktualisieren
   respinguy-app-rm        ResPinGuy entfernen
-  rpg-install             System installieren (nur Live)
+  install                 System installieren (nur Live)
 
 DATEIEN
   /usr/share/ResPinGuy-File-Config/respinguy-config

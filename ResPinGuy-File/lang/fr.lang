@@ -28,7 +28,7 @@ L_LIVE_ONLY_INSTALL="Mode live : seule l'installation est disponible.
 
 Lancez :
 
-  rpg-install"
+  install"
 L_INSTALL_WARN_B="L'assistant va installer le système sur un disque.
 
 Le disque choisi sera entièrement effacé.
@@ -226,6 +226,7 @@ L_BUILD_FAIL_T="Build interrompu"
 L_BUILD_FAIL_B="Le build s'est arrêté avec le code %s.
 
 Consultez les messages affichés dans le terminal."
+L_VIEW_LOG="Voir le journal ?"
 
 # Dependances
 L_DEPS_TITLE="Dépendances"
@@ -320,7 +321,7 @@ COMMANDES
                           Installer les dépendances manquantes
   respinguy-app-up        Mettre à jour ResPinGuy
   respinguy-app-rm        Supprimer ResPinGuy
-  rpg-install             Installer le système (live uniquement)
+  install                 Installer le système (live uniquement)
 
 FICHIERS
   /usr/share/ResPinGuy-File-Config/respinguy-config

@@ -7,6 +7,10 @@
 # d'origine, configure le fstab, GRUB et l'initramfs.
 #
 # Messages en francais (version 1).
+#
+# Interface : whiptail/dialog (menu, confirmations, mots de passe) puis ecran
+# de progression. L'installation elle-meme tourne en arriere-plan (worker) et
+# ecrit son journal dans /tmp/respinguy-install.log, consultable en cas d'erreur.
 #_____________________________________________________________________________________________
 
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin${PATH:+:$PATH}"
@@ -18,15 +22,23 @@ if [ -n "${RPG_FORCE_COLOR-}" ] || [ -t 1 ]; then
     C_AMBER=$'\033[38;2;255;181;22m'
     C_BLUE=$'\033[38;2;29;47;82m'
     C_RED=$'\033[38;2;238;0;0m'
+    C_YELLOW=$'\033[38;2;255;181;22m'
+    C_BLACK_BG=$'\033[48;2;0;0;0m'
 else
-    C_RESET=""; C_GREEN=""; C_AMBER=""; C_BLUE=""; C_RED=""
+    C_RESET=""; C_GREEN=""; C_AMBER=""; C_BLUE=""; C_RED=""; C_YELLOW=""; C_BLACK_BG=""
 fi
+
+# Etat partage entre l'interface et le worker
+RPG_STATUS="/tmp/respinguy-install.status"
+RPG_WORKER="${RPG_WORKER:-0}"
 
 # Barre de progression
 rpg_i_step() {
     local pct="$1"
     local msg="$2"
     local width=30 fill empty bar
+    printf '%s|%s\n' "$pct" "$msg" > "$RPG_STATUS.tmp" 2>/dev/null \
+        && mv -f "$RPG_STATUS.tmp" "$RPG_STATUS" 2>/dev/null || true
     fill=$((pct * width / 100))
     empty=$((width - fill))
     bar=$(printf '%*s' "$fill" '' | tr ' ' '#')
@@ -41,15 +53,56 @@ RPG_LOG="/tmp/respinguy-install.log"
 RPG_TARGET="/mnt/respinguy-target"
 CHROOT_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.39"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.40"
 
-say()  { printf '%s\n' "$*"; }
-warn() { printf '\n%s[ATTENTION] %s%s\n' "$C_AMBER" "$*" "$C_RESET"; }
-die()  { printf '\n%s[ERREUR] %s%s\n' "$C_RED" "$*" "$C_RESET" >&2; exit 1; }
+# Interface : whiptail/dialog si disponibles, sinon texte
+RPG_UI="basic"
+if [ -t 0 ] && [ -t 1 ] && command -v whiptail >/dev/null 2>&1; then
+    RPG_UI="whiptail"
+elif [ -t 0 ] && [ -t 1 ] && command -v dialog >/dev/null 2>&1; then
+    RPG_UI="dialog"
+fi
+RPG_BACKTITLE="ResPinGuy $RPG_VERSION"
+RPG_NEWT='root=yellow,black
+window=yellow,black
+border=blue,black
+title=yellow,black
+button=yellow,red
+actbutton=yellow,red
+compactbutton=yellow,red
+entry=yellow,blue
+label=yellow,black
+listbox=yellow,black
+actlistbox=yellow,black
+sellistbox=yellow,green
+actsellistbox=yellow,green
+textbox=yellow,black
+acttextbox=yellow,black
+helpline=yellow,black
+roottext=yellow,black
+disentry=gray,black'
+
+if [ "$RPG_WORKER" = "1" ]; then
+    say()  { printf '%s\n' "$*"; }
+    warn() { printf '\n%s[ATTENTION] %s%s\n' "$C_AMBER" "$*" "$C_RESET"; }
+    die()  { printf '\n%s[ERREUR] %s%s\n' "$C_RED" "$*" "$C_RESET" >&2; exit 1; }
+else
+    say()  { printf '%s\n' "$*" | tee -a "$RPG_LOG"; }
+    warn() { printf '\n%s[ATTENTION] %s%s\n' "$C_AMBER" "$*" "$C_RESET" | tee -a "$RPG_LOG"; }
+    die()  { printf '\n%s[ERREUR] %s%s\n' "$C_RED" "$*" "$C_RESET" | tee -a "$RPG_LOG" >&2; exit 1; }
+fi
 
 ask() {
     local prompt="$1"
     local value
+    if [ "$RPG_UI" != "basic" ]; then
+        value=$(NEWT_COLORS="$RPG_NEWT" "$RPG_UI" \
+            --title "ResPinGuy" --backtitle "$RPG_BACKTITLE" \
+            --cancel-button "Annuler" --ok-button "Valider" \
+            --inputbox "$prompt" 12 78 3>&1 1>&2 2>&3) || return 1
+        printf '%s' "$value"
+        return 0
+    fi
     printf '%s' "$prompt" >&2
     read -r value
     printf '%s' "$value"
@@ -58,12 +111,109 @@ ask() {
 yesno() {
     local prompt="$1"
     local value
-    printf '%s' "$prompt"
+    if [ "$RPG_UI" != "basic" ]; then
+        NEWT_COLORS="$RPG_NEWT" "$RPG_UI" \
+            --title "ResPinGuy" --backtitle "$RPG_BACKTITLE" \
+            --yes-button "Oui" --no-button "Non" \
+            --yesno "$prompt" 14 78
+        return $?
+    fi
+    printf '%s [o/N] ' "$prompt"
     read -r value
     case "$value" in
         o|O|y|Y|oui|Oui|OUI|yes|Yes|YES|s|S|si|Si|sí|Sí|sim|Sim) return 0 ;;
         *) return 1 ;;
     esac
+}
+
+ui_msg() {
+    local title="$1"
+    local text="$2"
+    text=${text//\\n/$'\n'}
+    printf '\n%s\n' "$text" >> "$RPG_LOG"
+    if [ "$RPG_UI" != "basic" ]; then
+        NEWT_COLORS="$RPG_NEWT" "$RPG_UI" \
+            --title "$title" --backtitle "$RPG_BACKTITLE" \
+            --ok-button "Continuer" --msgbox "$text" 18 78
+    else
+        printf '\n=== %s ===\n%s\n' "$title" "$text"
+    fi
+}
+
+ui_text() {
+    local title="$1"
+    local file="$2"
+    local tmp
+    if [ ! -s "$file" ]; then
+        ui_msg "$title" "Le journal est vide."
+        return
+    fi
+    tmp=$(mktemp /tmp/rpg-log.XXXXXX)
+    sed 's/\x1b\[[0-9;]*[a-zA-Z]//g; s/\r$//' "$file" > "$tmp" 2>/dev/null || cp "$file" "$tmp"
+    if [ "$RPG_UI" != "basic" ]; then
+        NEWT_COLORS="$RPG_NEWT" "$RPG_UI" \
+            --title "$title" --backtitle "$RPG_BACKTITLE" \
+            --ok-button "Fermer" --textbox "$tmp" 22 100
+    else
+        printf '\n=== %s ===\n' "$title"
+        tail -n 60 "$tmp"
+        printf '\n'
+    fi
+    rm -f "$tmp"
+}
+
+password() {
+    local prompt="$1"
+    local value
+    if [ "$RPG_UI" != "basic" ]; then
+        value=$(NEWT_COLORS="$RPG_NEWT" "$RPG_UI" \
+            --title "Mot de passe" --backtitle "$RPG_BACKTITLE" \
+            --cancel-button "Annuler" --ok-button "Valider" \
+            --passwordbox "$prompt" 11 78 3>&1 1>&2 2>&3) || return 1
+    else
+        printf '%s' "$prompt" >&2
+        IFS= read -r -s value || return 1
+        printf '\n' >&2
+    fi
+    printf '%s' "$value"
+}
+
+ask_password() {
+    local prompt="$1"
+    local p1 p2
+    p1=$(password "$prompt") || return 1
+    p2=$(password "Confirmation : ") || return 1
+    if [ "$p1" != "$p2" ]; then
+        ui_msg "Mots de passe" "Les deux mots de passe ne correspondent pas.\nRéessayez."
+        return 1
+    fi
+    printf '%s' "$p1"
+}
+
+rpg_i_screen() {
+    local pct="$1"
+    local msg="$2"
+    local spin="$3"
+    local last
+    local width=42 fill empty bar chars
+    chars='|/-\'
+    fill=$((pct * width / 100))
+    [ "$fill" -gt "$width" ] && fill="$width"
+    empty=$((width - fill))
+    bar=$(printf '%*s' "$fill" '' | tr ' ' '#')
+    bar="$bar$(printf '%*s' "$empty" '')"
+    last=$(tail -n 1 "$RPG_LOG" 2>/dev/null | tr -d '\r' | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' | cut -c1-76)
+    [ -n "$last" ] || last="Préparation..."
+    clear
+    printf '%s%s' "$C_BLACK_BG" "$C_YELLOW"
+    printf '\n  ResPinGuy %s - Installation\n' "$RPG_VERSION"
+    printf '  %s%s\n' "$(printf '%*s' 70 '' | tr ' ' '_')" "$C_RESET"
+    printf '\n  %s[%s%s%s]%s %3d%%  %s%s %s%s\n\n' \
+        "$C_BLUE" "$C_GREEN" "$bar" "$C_BLUE" "$C_RESET" \
+        "$pct" "$C_AMBER" "$msg" "${chars:$spin:1}" "$C_RESET"
+    printf '  %sDernière ligne du journal :%s\n' "$C_BLUE" "$C_RESET"
+    printf '  %s%s%s\n\n' "$C_AMBER" "$last" "$C_RESET"
+    printf '  %sJournal complet : %s%s\n' "$C_BLUE" "$RPG_LOG" "$C_RESET"
 }
 
 part_path() {
@@ -78,7 +228,8 @@ part_path() {
 
 [ "0$UID" -eq 0 ] || die "Merci d'être en root."
 
-if ! grep -qE '(^| )root=live:|(^| )rd\.live\.image' /proc/cmdline 2>/dev/null; then
+if ! grep -qE '(^| )root=live:|(^| )rd\.live\.image' /proc/cmdline 2>/dev/null \
+   && [ ! -f /run/initramfs/live/LiveOS/squashfs.img ]; then
     die "Ce système n'est pas un live ResPinGuy. Installation refusée."
 fi
 
@@ -117,94 +268,236 @@ else
 fi
 [ "$UEFI" -eq 1 ] && [ -z "$MKFS_VFAT" ] && die "Outil manquant : mkfs.vfat/mkfs.fat (dosfstools)."
 
-exec > >(tee -a "$RPG_LOG") 2>&1
-
 #----------------------------------------------------------------------------------------------
 # Nettoyage
 
 cleanup() {
     umount -R "$RPG_TARGET" 2>/dev/null || true
+    rm -f /tmp/respinguy-rootpw.* /tmp/respinguy-userpw.* 2>/dev/null || true
 }
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT TERM
 
 #----------------------------------------------------------------------------------------------
-# Presentation
+# Presentation et choix (interface)
+#----------------------------------------------------------------------------------------------
 
 DISTRO=$(sed -n 's/^PRETTY_NAME=//p' /etc/os-release 2>/dev/null | tr -d '"' | head -n1)
 [ -n "$DISTRO" ] || DISTRO="inconnue"
 
-say "=============================================="
-say " ResPinGuy $RPG_VERSION - Installation sur le disque"
-say "=============================================="
-say "Distribution : $DISTRO"
-say "Architecture : $(uname -m)"
-say "Démarrage    : $BOOT_MODE"
-say ""
-say "ATTENTION : cette opération va EFFACER le disque choisi."
-say "Toutes les données du disque seront perdues."
-say ""
-if ! yesno "Continuer ? [o/N] "; then
-    say "Installation annulée."
+rpg_run_worker() {
+    local pct=0 msg="Démarrage..." spin=0 rc=0 p m pid
+    local done_file="/tmp/respinguy-install.done"
+    : > "$RPG_LOG"
+    rm -f "$RPG_STATUS" "$RPG_STATUS.tmp" "$done_file"
+
+    (
+        RPG_WORKER=1 RPG_DISK="$DISK" RPG_HOST="$HOST" \
+            RPG_ROOTPW_FILE="${ROOTPW_FILE:-}" RPG_USERPW_FILE="${USERPW_FILE:-}" \
+            RPG_USER_NAME="${PW_USER:-}" \
+            bash "$0" >> "$RPG_LOG" 2>&1
+        echo $? > "$done_file"
+    ) &
+    pid=$!
+
+    trap 'kill "$pid" 2>/dev/null; rm -f "$ROOTPW_FILE" "$USERPW_FILE"; exit 130' INT TERM
+
+    while [ ! -f "$done_file" ]; do
+        if [ -f "$RPG_STATUS" ]; then
+            IFS='|' read -r p m < "$RPG_STATUS" 2>/dev/null
+            case "$p" in
+                ''|*[!0-9]*) ;;
+                *) pct="$p" ;;
+            esac
+            [ -n "${m-}" ] && msg="$m"
+        fi
+        rpg_i_screen "$pct" "$msg" "$spin"
+        spin=$(( (spin + 1) % 4 ))
+        sleep 0.5
+    done
+    wait "$pid" 2>/dev/null
+    rc=$(cat "$done_file" 2>/dev/null)
+    case "$rc" in
+        ''|*[!0-9]*) rc=1 ;;
+    esac
+    rm -f "$done_file"
+    rpg_i_screen "$pct" "$msg" 0
+
+    rm -f "$ROOTPW_FILE" "$USERPW_FILE"
+
+    if [ "$rc" -ne 0 ]; then
+        ui_msg "Installation échouée" "L'installation s'est arrêtée (code $rc).\n\nLe journal va s'afficher pour identifier l'erreur."
+        ui_text "Journal d'installation" "$RPG_LOG"
+        exit 1
+    fi
+
+    ui_msg "Installation terminée" "ResPinGuy $RPG_VERSION a été installé.\n\nDisque    : $DISK\nDémarrage : $BOOT_MODE\nJournal   : /var/log/respinguy-install.log"
+    if yesno "Redémarrer maintenant ?"; then
+        sync
+        umount -R "$RPG_TARGET" 2>/dev/null || true
+        trap - EXIT INT TERM
+        reboot
+    else
+        ui_msg "Installation terminée" "Tu peux redémarrer manuellement :\n\nsync && umount -R $RPG_TARGET && reboot"
+    fi
+}
+
+frontend() {
+    say "=============================================="
+    say " ResPinGuy $RPG_VERSION - Installation sur le disque"
+    say "=============================================="
+    say "Journal : $RPG_LOG"
+    say "Distribution : $DISTRO"
+    say "Architecture : $(uname -m)"
+    say "Démarrage    : $BOOT_MODE"
+    say ""
+    say "ATTENTION : cette opération va EFFACER le disque choisi."
+    say "Toutes les données du disque seront perdues."
+    say ""
+
+    if [ "$RPG_UI" != "basic" ]; then
+        ui_msg "ResPinGuy $RPG_VERSION" "Bienvenue dans l'installateur ResPinGuy.\n\nDistribution : $DISTRO\nArchitecture : $(uname -m)\nDémarrage : $BOOT_MODE\n\nATTENTION : le disque choisi sera entièrement effacé.\nToutes ses données seront perdues."
+    fi
+
+    if ! yesno "Continuer l'installation ?"; then
+        say "Installation annulée."
+        exit 0
+    fi
+
+    # Choix du disque
+    live_src=$(findmnt -n -o SOURCE "$LIVE_DIR" 2>/dev/null | head -n1)
+    [ -n "$live_src" ] || live_src=$(awk -v d="$LIVE_DIR" '$2 == d { print $1; exit }' /proc/mounts 2>/dev/null)
+    live_disk=""
+    if [ -n "$live_src" ] && [ -b "$live_src" ]; then
+        pk=$(lsblk -n -o PKNAME "$live_src" 2>/dev/null | head -n1)
+        if [ -n "$pk" ]; then live_disk="/dev/$pk"; else live_disk="$live_src"; fi
+    fi
+
+    CANDIDATES=()
+    DISK_CHOICES=()
+    DISK_LABELS=()
+    while read -r name size model; do
+        case "$name" in
+            /dev/loop*|/dev/sr*|/dev/zram*|/dev/ram*|/dev/dm-*|/dev/md*) continue ;;
+        esac
+        [ -b "$name" ] || continue
+        [ "$name" = "$live_disk" ] && continue
+        CANDIDATES+=("$name")
+        DISK_CHOICES+=("$name" "$size  $model")
+        DISK_LABELS+=("$name  $size  $model")
+    done < <(lsblk -dpno NAME,SIZE,MODEL 2>/dev/null)
+
+    [ "${#CANDIDATES[@]}" -gt 0 ] || die "Aucun disque disponible."
+
+    if [ "$RPG_UI" != "basic" ]; then
+        DISK=$(NEWT_COLORS="$RPG_NEWT" "$RPG_UI" \
+            --title "Disque cible" --backtitle "$RPG_BACKTITLE" \
+            --cancel-button "Retour" --ok-button "Choisir" \
+            --menu "Choisissez le disque à effacer :" 20 78 10 "${DISK_CHOICES[@]}" 3>&1 1>&2 2>&3) \
+            || { say "Installation annulée."; exit 0; }
+    else
+        say "Disques disponibles :"
+        for ((i = 0; i < ${#CANDIDATES[@]}; i++)); do
+            printf '  %d) %s\n' "$((i + 1))" "${DISK_LABELS[$i]}"
+        done
+        num=$(ask "Numéro du disque à installer : ")
+        case "$num" in
+            ''|*[!0-9]*) die "Sélection invalide." ;;
+        esac
+        [ "$num" -ge 1 ] && [ "$num" -le "${#CANDIDATES[@]}" ] || die "Sélection invalide."
+        DISK="${CANDIDATES[$((num - 1))]}"
+    fi
+
+    [ "$DISK" != "$live_disk" ] || die "Ce disque contient le live. Choisissez un autre disque."
+
+    if lsblk -n -o MOUNTPOINT "$DISK" 2>/dev/null | grep -q '[^[:space:]]'; then
+        die "Une partition de $DISK est montée. Démontez-la d'abord."
+    fi
+
+    DISK_BYTES=$(blockdev --getsize64 "$DISK" 2>/dev/null || echo 0)
+    SQUASH_BYTES=$(stat -c %s "$SQUASHFS" 2>/dev/null || echo 0)
+    UNSQUASH_BYTES=$(unsquashfs -s "$SQUASHFS" 2>/dev/null | awk '/Filesystem size/ { print $3; exit }')
+    case "$UNSQUASH_BYTES" in
+        ''|*[!0-9]*) UNSQUASH_BYTES="$SQUASH_BYTES" ;;
+    esac
+    MIN_BYTES=$(( UNSQUASH_BYTES + 2 * 1024 * 1024 * 1024 ))
+    if [ "$DISK_BYTES" -lt "$MIN_BYTES" ]; then
+        die "Disque trop petit pour contenir le système (minimum ~$((MIN_BYTES / 1024 / 1024)) Mo)."
+    fi
+
+    say ""
+    lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT "$DISK" | tee -a "$RPG_LOG"
+    say ""
+    c=$(ask "Tapez le chemin du disque ($DISK) pour confirmer : ")
+    [ "$c" = "$DISK" ] || die "Confirmation incorrecte. Installation annulée."
+    c=$(ask "Tapez EFFACER pour confirmer : ")
+    [ "$c" = "EFFACER" ] || die "Confirmation incorrecte. Installation annulée."
+
+    # Nom de la machine et mots de passe (collectes avant le worker)
+    DEF_HOST=$(cat /etc/hostname 2>/dev/null | head -n1)
+    [ -n "$DEF_HOST" ] || DEF_HOST="respinguy"
+    HOST=$(ask "Nom de la machine [$DEF_HOST] : ")
+    [ -z "$HOST" ] && HOST="$DEF_HOST"
+
+    ROOTPW_FILE=""
+    USERPW_FILE=""
+    PW_USER=""
+    if yesno "Définir un mot de passe pour root ?"; then
+        p=$(ask_password "Mot de passe root : ") || true
+        if [ -n "$p" ]; then
+            ROOTPW_FILE=$(mktemp /tmp/respinguy-rootpw.XXXXXX)
+            chmod 600 "$ROOTPW_FILE"
+            printf 'root:%s\n' "$p" > "$ROOTPW_FILE"
+        fi
+        unset p
+    fi
+
+    if yesno "Définir un mot de passe pour un utilisateur ?"; then
+        PW_USERS=("(aucun)")
+        while read -r u; do
+            [ -n "$u" ] && PW_USERS+=("$u")
+        done < <(awk -F: '$3 >= 1000 && $3 < 65534 { print $1 }' /etc/passwd)
+        if [ "$RPG_UI" != "basic" ] && [ "${#PW_USERS[@]}" -gt 1 ]; then
+            U_CHOICES=()
+            for u in "${PW_USERS[@]:1}"; do U_CHOICES+=("$u" ""); done
+            PW_USER=$(NEWT_COLORS="$RPG_NEWT" "$RPG_UI" \
+                --title "Utilisateur" --backtitle "$RPG_BACKTITLE" \
+                --cancel-button "Retour" --ok-button "Choisir" \
+                --menu "Choisissez le compte à modifier :" 18 78 8 "${U_CHOICES[@]}" 3>&1 1>&2 2>&3) \
+                || PW_USER=""
+        else
+            PW_USER=$(ask "Utilisateur (vide = aucun) : ")
+        fi
+        if [ -n "$PW_USER" ] && grep -q "^$PW_USER:" /etc/passwd; then
+            p=$(ask_password "Mot de passe pour $PW_USER : ") || true
+            if [ -n "$p" ]; then
+                USERPW_FILE=$(mktemp /tmp/respinguy-userpw.XXXXXX)
+                chmod 600 "$USERPW_FILE"
+                printf '%s:%s\n' "$PW_USER" "$p" > "$USERPW_FILE"
+            fi
+            unset p
+        elif [ -n "$PW_USER" ]; then
+            ui_msg "Utilisateur" "Utilisateur inconnu : $PW_USER\nAucun mot de passe utilisateur ne sera défini."
+            PW_USER=""
+        fi
+    fi
+
+    rpg_run_worker
     exit 0
-fi
+}
 
 #----------------------------------------------------------------------------------------------
-# Choix du disque
+# Mode worker : execution non interactive, pilote par l'interface
 
-live_src=$(findmnt -n -o SOURCE "$LIVE_DIR" 2>/dev/null | head -n1)
-[ -n "$live_src" ] || live_src=$(awk -v d="$LIVE_DIR" '$2 == d { print $1; exit }' /proc/mounts 2>/dev/null)
-live_disk=""
-if [ -n "$live_src" ] && [ -b "$live_src" ]; then
-    pk=$(lsblk -n -o PKNAME "$live_src" 2>/dev/null | head -n1)
-    if [ -n "$pk" ]; then live_disk="/dev/$pk"; else live_disk="$live_src"; fi
+if [ "${RPG_WORKER:-0}" != "1" ]; then
+    frontend
 fi
 
-CANDIDATES=()
-say "Disques disponibles :"
-while read -r name size model; do
-    case "$name" in
-        /dev/loop*|/dev/sr*|/dev/zram*|/dev/ram*|/dev/dm-*|/dev/md*) continue ;;
-    esac
-    [ -b "$name" ] || continue
-    [ "$name" = "$live_disk" ] && continue
-    CANDIDATES+=("$name")
-    printf '  %d) %s  %s  %s\n' "${#CANDIDATES[@]}" "$name" "$size" "$model"
-done < <(lsblk -dpno NAME,SIZE,MODEL 2>/dev/null)
-
-[ "${#CANDIDATES[@]}" -gt 0 ] || die "Aucun disque disponible."
-
-num=$(ask "Numéro du disque à installer : ")
-case "$num" in
-    ''|*[!0-9]*) die "Sélection invalide." ;;
-esac
-[ "$num" -ge 1 ] && [ "$num" -le "${#CANDIDATES[@]}" ] || die "Sélection invalide."
-DISK="${CANDIDATES[$((num - 1))]}"
-
-[ "$DISK" != "$live_disk" ] || die "Ce disque contient le live. Choisissez un autre disque."
-
-if lsblk -n -o MOUNTPOINT "$DISK" 2>/dev/null | grep -q '[^[:space:]]'; then
-    die "Une partition de $DISK est montée. Démontez-la d'abord."
-fi
-
-DISK_BYTES=$(blockdev --getsize64 "$DISK" 2>/dev/null || echo 0)
-SQUASH_BYTES=$(stat -c %s "$SQUASHFS" 2>/dev/null || echo 0)
-UNSQUASH_BYTES=$(unsquashfs -s "$SQUASHFS" 2>/dev/null | awk '/Filesystem size/ { print $3; exit }')
-case "$UNSQUASH_BYTES" in
-    ''|*[!0-9]*) UNSQUASH_BYTES="$SQUASH_BYTES" ;;
-esac
-MIN_BYTES=$(( UNSQUASH_BYTES + 2 * 1024 * 1024 * 1024 ))
-if [ "$DISK_BYTES" -lt "$MIN_BYTES" ]; then
-    die "Disque trop petit pour contenir le système (minimum ~$((MIN_BYTES / 1024 / 1024)) Mo)."
-fi
-
-say ""
-lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT "$DISK"
-say ""
-c=$(ask "Tapez le chemin du disque ($DISK) pour confirmer : ")
-[ "$c" = "$DISK" ] || die "Confirmation incorrecte. Installation annulée."
-c=$(ask "Tapez EFFACER pour confirmer : ")
-[ "$c" = "EFFACER" ] || die "Confirmation incorrecte. Installation annulée."
+DISK="${RPG_DISK:?Disque cible manquant.}"
+HOST="${RPG_HOST:-}"
+ROOTPW_FILE="${RPG_ROOTPW_FILE:-}"
+USERPW_FILE="${RPG_USERPW_FILE:-}"
+PW_USER="${RPG_USER_NAME:-}"
 
 #----------------------------------------------------------------------------------------------
 # Partitionnement
@@ -235,11 +528,11 @@ udevadm settle 2>/dev/null || sleep 2
 # Formatage
 
 rpg_i_step 25 "Formatage de la racine (ext4)"
-mkfs.ext4 -F -L RESPINGUY_ROOT "$ROOT_PART" || die "Échec du formatage ext4."
+mkfs.ext4 -F -L RESPINGUY_ROOT "$ROOT_PART" >> "$RPG_LOG" 2>&1 || die "Échec du formatage ext4."
 
 if [ "$UEFI" -eq 1 ]; then
     say "Formatage de l'ESP (FAT32)..."
-    "$MKFS_VFAT" -F 32 -n RESPINGUY_EFI "$ESP_PART" || die "Échec du formatage FAT32."
+    "$MKFS_VFAT" -F 32 -n RESPINGUY_EFI "$ESP_PART" >> "$RPG_LOG" 2>&1 || die "Échec du formatage FAT32."
 fi
 
 #----------------------------------------------------------------------------------------------
@@ -249,15 +542,15 @@ mkdir -p "$RPG_TARGET"
 mount "$ROOT_PART" "$RPG_TARGET" || die "Impossible de monter $ROOT_PART."
 
 rpg_i_step 40 "Extraction du système"
-unsquashfs -f -d "$RPG_TARGET" "$SQUASHFS" || die "Échec de l'extraction du squashfs."
+unsquashfs -f -d "$RPG_TARGET" "$SQUASHFS" >> "$RPG_LOG" 2>&1 || die "Échec de l'extraction du squashfs."
 
 # Le squashfs contient le /etc du live (fstab tmpfs, services masqués...).
 # On restaure le /etc d'origine sauvegarde par le build.
 if [ -f "$ETC_TAR" ]; then
     rpg_i_step 55 "Restauration du /etc d'origine"
     rm -rf "$RPG_TARGET/etc"
-    if ! tar -C "$RPG_TARGET" -xpf "$ETC_TAR" --xattrs --acls 2>/dev/null; then
-        tar -C "$RPG_TARGET" -xpf "$ETC_TAR" || die "Échec de la restauration de /etc."
+    if ! tar -C "$RPG_TARGET" -xpf "$ETC_TAR" --xattrs --acls >> "$RPG_LOG" 2>&1; then
+        tar -C "$RPG_TARGET" -xpf "$ETC_TAR" >> "$RPG_LOG" 2>&1 || die "Échec de la restauration de /etc."
     fi
 else
     warn "Archive /etc d'origine absente de l'ISO : le système peut hériter des réglages live."
@@ -293,8 +586,7 @@ ROOT_UUID=$(blkid -s UUID -o value "$ROOT_PART") || die "Impossible de lire l'UU
 [ -f "$RPG_TARGET/etc/mdadm.conf" ] && : > "$RPG_TARGET/etc/mdadm.conf"
 
 DEF_HOST=$(cat "$RPG_TARGET/etc/hostname" 2>/dev/null)
-HOST=$(ask "Nom de la machine [$DEF_HOST] : ")
-[ -z "$HOST" ] && HOST="$DEF_HOST"
+[ -n "$HOST" ] || HOST="$DEF_HOST"
 if [ -n "$HOST" ]; then
     printf '%s\n' "$HOST" > "$RPG_TARGET/etc/hostname"
     if grep -q '^127\.0\.1\.1' "$RPG_TARGET/etc/hosts" 2>/dev/null; then
@@ -330,13 +622,13 @@ fi
 rpg_i_step 75 "Installation de GRUB ($BOOT_MODE)"
 if [ "$UEFI" -eq 1 ]; then
     env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" "$GRUB_INSTALL" --target=x86_64-efi \
-        --efi-directory=/boot/efi --bootloader-id=ResPinGuy --recheck \
+        --efi-directory=/boot/efi --bootloader-id=ResPinGuy --recheck >> "$RPG_LOG" 2>&1 \
         || die "Échec de grub-install (UEFI)."
     mkdir -p "$RPG_TARGET/boot/efi/EFI/BOOT"
     cp "$RPG_TARGET/boot/efi/EFI/ResPinGuy/grubx64.efi" \
        "$RPG_TARGET/boot/efi/EFI/BOOT/BOOTX64.EFI" 2>/dev/null || true
 else
-    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" "$GRUB_INSTALL" --target=i386-pc --recheck "$DISK" \
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" "$GRUB_INSTALL" --target=i386-pc --recheck "$DISK" >> "$RPG_LOG" 2>&1 \
         || die "Échec de grub-install (BIOS)."
 fi
 
@@ -345,16 +637,16 @@ if [ -d "$RPG_TARGET/boot/grub2" ]; then
 else
     GRUB_CFG="/boot/grub/grub.cfg"
 fi
-env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" "$GRUB_MKCONFIG" -o "$GRUB_CFG" || warn "Échec de la génération de grub.cfg."
+env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" "$GRUB_MKCONFIG" -o "$GRUB_CFG" >> "$RPG_LOG" 2>&1 || warn "Échec de la génération de grub.cfg."
 
 rpg_i_step 85 "Régénération de l'initramfs"
 if env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v update-initramfs >/dev/null 2>&1'; then
-    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" update-initramfs -u -k all || warn "Échec de update-initramfs."
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" update-initramfs -u -k all >> "$RPG_LOG" 2>&1 || warn "Échec de update-initramfs."
 elif env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v mkinitcpio >/dev/null 2>&1'; then
-    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" mkinitcpio -P || warn "Échec de mkinitcpio."
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" mkinitcpio -P >> "$RPG_LOG" 2>&1 || warn "Échec de mkinitcpio."
 elif env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" /bin/sh -c 'command -v dracut >/dev/null 2>&1'; then
-    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" dracut -f --regenerate-all 2>/dev/null \
-        || env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" dracut -f \
+    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" dracut -f --regenerate-all >> "$RPG_LOG" 2>&1 \
+        || env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" dracut -f >> "$RPG_LOG" 2>&1 \
         || warn "Échec de dracut."
 else
     warn "Aucun outil d'initramfs reconnu (update-initramfs, mkinitcpio, dracut)."
@@ -373,31 +665,30 @@ fi
 [ -f "$RPG_TARGET/etc/selinux/config" ] && touch "$RPG_TARGET/.autorelabel"
 
 #----------------------------------------------------------------------------------------------
-# Mots de passe
+# Mots de passe (collectes par l'interface, appliques ici)
 
 rpg_i_step 90 "Mots de passe"
-say ""
-if yesno "Définir un mot de passe pour root ? [o/N] "; then
-    env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" passwd root || warn "Échec du changement de mot de passe root."
-fi
-
-if yesno "Définir un mot de passe pour un utilisateur ? [o/N] "; then
-    say "Utilisateurs disponibles :"
-    awk -F: '$3 >= 1000 && $3 < 65534 { print "  - " $1 }' "$RPG_TARGET/etc/passwd"
-    U=$(ask "Utilisateur : ")
-    if grep -q "^$U:" "$RPG_TARGET/etc/passwd"; then
-        env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" passwd "$U" || warn "Échec du changement de mot de passe."
+if [ -n "$ROOTPW_FILE" ] && [ -s "$ROOTPW_FILE" ]; then
+    if env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" chpasswd < "$ROOTPW_FILE" >> "$RPG_LOG" 2>&1; then
+        say "Mot de passe root défini."
     else
-        warn "Utilisateur inconnu : $U"
+        warn "Échec du changement de mot de passe root."
     fi
 fi
+if [ -n "$USERPW_FILE" ] && [ -s "$USERPW_FILE" ]; then
+    if env PATH="$CHROOT_PATH" chroot "$RPG_TARGET" chpasswd < "$USERPW_FILE" >> "$RPG_LOG" 2>&1; then
+        say "Mot de passe défini pour ${PW_USER:-utilisateur}."
+    else
+        warn "Échec du changement de mot de passe (${PW_USER:-utilisateur})."
+    fi
+fi
+rm -f "$ROOTPW_FILE" "$USERPW_FILE" 2>/dev/null || true
 
 #----------------------------------------------------------------------------------------------
 # Fin
 
-cp "$RPG_LOG" "$RPG_TARGET/var/log/respinguy-install.log" 2>/dev/null || true
+rpg_i_step 95 "Finalisation"
 
-say ""
 rpg_i_step 100 "Installation terminée"
 say "=============================================="
 say " Installation terminée."
@@ -407,12 +698,5 @@ say " Racine   : $ROOT_PART (ext4)"
 say " Démarrage: $BOOT_MODE"
 say " Journal  : /var/log/respinguy-install.log"
 say "=============================================="
-
-if yesno "Redémarrer maintenant ? [o/N] "; then
-    sync
-    umount -R "$RPG_TARGET" 2>/dev/null || true
-    trap - EXIT
-    reboot
-else
-    say "Tu peux redémarrer manuellement : sync && umount -R $RPG_TARGET && reboot"
-fi
+cp "$RPG_LOG" "$RPG_TARGET/var/log/respinguy-install.log" 2>/dev/null || true
+sync

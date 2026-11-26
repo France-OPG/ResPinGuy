@@ -15,10 +15,13 @@ else
 fi
 
 # Barre de progression par etapes
+RPG_STATUS_FILE="${RPG_STATUS_FILE:-/tmp/respinguy-build.status}"
+
 rpg_step() {
     local pct="$1"
     local msg="$2"
     local width=30 fill empty bar
+    printf '%s|%s\n' "$pct" "$msg" > "$RPG_STATUS_FILE" 2>/dev/null || true
     fill=$((pct * width / 100))
     empty=$((width - fill))
     bar=$(printf '%*s' "$fill" '' | tr ' ' '#')
@@ -246,7 +249,10 @@ if [ -f "$RPG_ETC_TMP/passwd" ]; then
     fi
 
     mkdir -p "$RPG_ETC_TMP/sudoers.d"
-    printf '%s ALL=(ALL) NOPASSWD: ALL\n' "$RPG_LIVE_USER" > "$RPG_ETC_TMP/sudoers.d/99-respinguy-live"
+    {
+        printf '%s ALL=(ALL) NOPASSWD: ALL\n' "$RPG_LIVE_USER"
+        printf 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"\n'
+    } > "$RPG_ETC_TMP/sudoers.d/99-respinguy-live"
     chmod 0440 "$RPG_ETC_TMP/sudoers.d/99-respinguy-live"
 
     HAS_DM=0
@@ -307,9 +313,17 @@ EOF
     mkdir -p "$RPG_ETC_TMP/profile.d"
     cat > "$RPG_ETC_TMP/profile.d/99-respinguy-live.sh" <<EOF
 # ResPinGuy live : "install" lance l'installateur
-install() { sudo rpg-install "\$@"; }
+if [ ! -x /usr/local/bin/install ]; then
+    install() { sudo bash /usr/share/ResPinGuy-File/respinguy-install "\$@"; }
+fi
 EOF
     chmod 0644 "$RPG_ETC_TMP/profile.d/99-respinguy-live.sh"
+
+    # "install" aussi dans les shells interactifs (bash/zsh)
+    for f in bash.bashrc bashrc zsh/zshrc zshrc; do
+        [ -f "$RPG_ETC_TMP/$f" ] || continue
+        printf '\n# ResPinGuy live : "install" lance l installateur\nif [ ! -x /usr/local/bin/install ]; then install() { sudo bash /usr/share/ResPinGuy-File/respinguy-install "$@"; }; fi\n' >> "$RPG_ETC_TMP/$f"
+    done
 
     echo "[INFO] Live : utilisateur $RPG_LIVE_USER (autologin, sans mot de passe)"
 fi

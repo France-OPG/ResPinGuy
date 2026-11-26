@@ -21,7 +21,7 @@ RPG_LANG_DIR="$RPG_FILE_DIR/lang"
 RPG_LANG="${RPG_LANG-}"
 RPG_BACKTITLE="ResPinGuy"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.39"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.40"
 
 # Palette officielle
 RPG_HEX_NAVY="#1d2f52"
@@ -886,8 +886,30 @@ rpg_is_live() {
 #_____________________________________________________________________________________________
 # Action : creer l'image ISO
 
+# Ecran de progression du build
+rpg_build_screen() {
+    local pct="$1"
+    local msg="$2"
+    local spin="$3"
+    local log="$4"
+    local width=30 fill empty bar chars
+    chars='|/-\'
+    fill=$((pct * width / 100))
+    empty=$((width - fill))
+    bar=$(printf '%*s' "$fill" '' | tr ' ' '#')
+    bar="$bar$(printf '%*s' "$empty" '')"
+    clear
+    printf '%s%s' "$C_BLACK_BG" "$C_YELLOW"
+    rpg_basic_header "$L_MENU_BUILD"
+    rpg_basic_rule
+    printf '\n  %s[%s%s%s]%s %3d%%  %s%s%s %s\n\n' \
+        "$C_BLUE" "$C_GREEN" "$bar" "$C_BLUE" "$C_RESET" \
+        "$pct" "$C_AMBER" "$msg" "$C_RESET" "${chars:$spin:1}"
+    printf '  %sJournal : %s%s\n' "$C_BLUE" "$log" "$C_RESET"
+}
+
 action_build() {
-    local summary rc
+    local summary rc log status done_file pid pct msg spin p m logtext
     rpg_load_effective
     rpg_deps_state
     if ! rpg_conf_ok; then
@@ -905,13 +927,49 @@ action_build() {
 
     ui_yesno "$L_BUILD_SUMMARY_T" "$summary" || return
 
-    clear
-    bash "$RPG_FILE_DIR/respinguy-build"
-    rc=$?
+    log="/tmp/respinguy-build.log"
+    status="/tmp/respinguy-build.status"
+    done_file="/tmp/respinguy-build.done"
+    : > "$log"
+    rm -f "$status" "$done_file"
+
+    (
+        RPG_STATUS_FILE="$status" bash "$RPG_FILE_DIR/respinguy-build" >> "$log" 2>&1
+        echo $? > "$done_file"
+    ) &
+    pid=$!
+    pct=0
+    msg="Démarrage..."
+    spin=0
+    while [ ! -f "$done_file" ]; do
+        if [ -f "$status" ]; then
+            IFS='|' read -r p m < "$status" 2>/dev/null
+            case "$p" in
+                ''|*[!0-9]*) ;;
+                *) pct="$p" ;;
+            esac
+            [ -n "${m-}" ] && msg="$m"
+        fi
+        rpg_build_screen "$pct" "$msg" "$spin" "$log"
+        spin=$(( (spin + 1) % 4 ))
+        sleep 0.5
+    done
+    wait "$pid" 2>/dev/null
+    rc=$(cat "$done_file" 2>/dev/null)
+    case "$rc" in
+        ''|*[!0-9]*) rc=1 ;;
+    esac
+    rm -f "$done_file"
+    rpg_build_screen "$pct" "$msg" 0 "$log"
+
     if [ $rc -eq 0 ]; then
         ui_msg "$L_BUILD_DONE_T" "$(printf "$L_BUILD_DONE_B" "$CFG_OUT/$CFG_NAME-$CFG_ARCH.iso")"
     else
         ui_error "$L_BUILD_FAIL_T" "$(printf "$L_BUILD_FAIL_B" "$rc")"
+        if ui_yesno "$L_BUILD_FAIL_T" "$L_VIEW_LOG"; then
+            logtext=$(sed 's/\x1b\[[0-9;]*[a-zA-Z]//g; s/\r$//' "$log" 2>/dev/null | tail -n 200)
+            ui_text "$L_BUILD_FAIL_T" "$logtext"
+        fi
     fi
 }
 

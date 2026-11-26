@@ -1,6 +1,6 @@
 #!/bin/bash
 if grep -qE '(^| )root=live:|(^| )rd\.live\.image' /proc/cmdline 2>/dev/null; then
-    echo "Mode live : seule l'installation est disponible. Lancez : rpg-install"
+    echo "Mode live : seule l'installation est disponible. Lancez : install"
     exit 1
 fi
 if [ "0$UID" -ne 0 ]; then

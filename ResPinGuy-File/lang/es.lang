@@ -27,7 +27,7 @@ L_LIVE_ONLY_INSTALL="Modo live: solo el instalador está disponible.
 
 Ejecuta:
 
-  rpg-install"
+  install"
 L_INSTALL_WARN_B="El asistente instalará el sistema en un disco.
 
 El disco elegido se borrará por completo.
@@ -225,6 +225,7 @@ L_BUILD_FAIL_T="Compilación interrumpida"
 L_BUILD_FAIL_B="La compilación se detuvo con el código %s.
 
 Consulta los mensajes mostrados en la terminal."
+L_VIEW_LOG="¿Ver el registro?"
 
 # Dependencias
 L_DEPS_TITLE="Dependencias"
@@ -319,7 +320,7 @@ COMANDOS
                           Instalar dependencias faltantes
   respinguy-app-up        Actualizar ResPinGuy
   respinguy-app-rm        Eliminar ResPinGuy
-  rpg-install             Instalar el sistema (solo live)
+  install                 Instalar el sistema (solo live)
 
 ARCHIVOS
   /usr/share/ResPinGuy-File-Config/respinguy-config
