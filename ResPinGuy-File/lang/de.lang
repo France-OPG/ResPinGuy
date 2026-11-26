@@ -311,6 +311,7 @@ OBERFLÄCHE
   respinguy --build       Direkter Build
   respinguy --config      Direkte Konfiguration
   respinguy --deps        Abhängigkeiten prüfen
+  respinguy-g             Grafische Oberfläche (GTK3)
 
 BEFEHLE
   respinguy-build         ISO-Abbild erstellen

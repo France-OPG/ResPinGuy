@@ -50,6 +50,7 @@ install_pkg() {
                 parted)         apt install -y parted ;;
                 e2fsprogs)      apt install -y e2fsprogs ;;
                 whiptail)       apt install -y whiptail ;;
+                gui)            apt install -y python3-gi gir1.2-gtk-3.0 ;;
             esac ;;
         dnf|yum)
             case "$TOOL" in
@@ -69,6 +70,7 @@ install_pkg() {
                 parted)         $PKG_MGR install -y parted ;;
                 e2fsprogs)      $PKG_MGR install -y e2fsprogs ;;
                 whiptail)       $PKG_MGR install -y newt ;;
+                gui)            $PKG_MGR install -y python3-gobject gtk3 ;;
             esac ;;
         pacman)
             case "$TOOL" in
@@ -88,6 +90,7 @@ install_pkg() {
                 parted)         pacman -S --noconfirm parted ;;
                 e2fsprogs)      pacman -S --noconfirm e2fsprogs ;;
                 whiptail)       pacman -S --noconfirm libnewt ;;
+                gui)            pacman -S --noconfirm python-gobject gtk3 ;;
             esac ;;
         zypper)
             case "$TOOL" in
@@ -107,6 +110,7 @@ install_pkg() {
                 parted)         zypper install -y parted ;;
                 e2fsprogs)      zypper install -y e2fsprogs ;;
                 whiptail)       zypper install -y newt ;;
+                gui)            zypper install -y python3-gobject gtk3 ;;
             esac ;;
         emerge)
             case "$TOOL" in
@@ -126,6 +130,7 @@ install_pkg() {
                 parted)         emerge sys-block/parted ;;
                 e2fsprogs)      emerge sys-fs/e2fsprogs ;;
                 whiptail)       emerge dev-libs/newt ;;
+                gui)            emerge dev-python/pygobject x11-libs/gtk+:3 ;;
             esac ;;
         unknown)
             echo "[ERREUR] Gestionnaire de paquets non reconnu."
@@ -219,6 +224,15 @@ fi
 if ! command -v whiptail >/dev/null 2>&1 && ! command -v dialog >/dev/null 2>&1; then
     echo "Installation de whiptail..."
     install_pkg whiptail && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
+fi
+
+# Interface graphique (utile pour le live ; ignoree sur un systeme sans bureau)
+if [ -n "${DISPLAY-}${WAYLAND_DISPLAY-}" ] || [ -d /usr/share/xsessions ]; then
+    if ! command -v python3 >/dev/null 2>&1 \
+       || ! python3 -c 'import gi; gi.require_version("Gtk","3.0")' >/dev/null 2>&1; then
+        echo "Installation de l'interface graphique (GTK3/PyGObject)..."
+        install_pkg gui && FIXED=$((FIXED+1)) || FAILED=$((FAILED+1))
+    fi
 fi
 
 #_____________________________________________________________________________________________

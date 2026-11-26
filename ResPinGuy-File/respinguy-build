@@ -325,6 +325,20 @@ EOF
         printf '\n# ResPinGuy live : "install" lance l installateur\nif [ ! -x /usr/local/bin/install ]; then install() { sudo bash /usr/share/ResPinGuy-File/respinguy-install "$@"; }; fi\n' >> "$RPG_ETC_TMP/$f"
     done
 
+    # Icône de l'installateur graphique sur le bureau du live.
+    mkdir -p "$RPG_ETC_TMP/xdg/autostart"
+    cat > "$RPG_ETC_TMP/xdg/autostart/respinguy-live-desktop.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=ResPinGuy Live Desktop
+Comment=Place l'installateur ResPinGuy sur le bureau
+Exec=bash /usr/share/ResPinGuy-File/respinguy-live-desktop
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+EOF
+    chmod 0644 "$RPG_ETC_TMP/xdg/autostart/respinguy-live-desktop.desktop"
+
     echo "[INFO] Live : utilisateur $RPG_LIVE_USER (autologin, sans mot de passe)"
 fi
 

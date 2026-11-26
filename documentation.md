@@ -181,6 +181,29 @@ Limites physiques :
   elle ne devient pas une ISO Debian ou Fedora.
 
 
+### Interface graphique
+
+`respinguy-g` est l'interface graphique (GTK3 + Python/PyGObject) :
+
+- sur un système installé : configuration et création de l'ISO ;
+- en live : installateur graphique uniquement (comme la TUI) ;
+- une icône « Installer ResPinGuy » est placée sur le bureau du live ;
+- si GTK3/PyGObject est absent, l'interface texte reste disponible.
+
+Les actions privilégiées utilisent `sudo` (live, sans mot de passe) ou `pkexec`
+(système installé, avec l'agent PolicyKit du bureau).
+
+Pour que l'interface graphique soit présente dans le live, installez les
+dépendances GTK3/PyGObject sur la machine source avant de construire l'ISO
+(`install` le fait automatiquement si un bureau est détecté).
+
+La première version de la GUI est en français ; les traductions seront ajoutées
+ensuite (la TUI reste disponible en 5 langues).
+
+Dépendances : `python3-gi` et `gir1.2-gtk-3.0` (Debian/Ubuntu),
+`python3-gobject` + `gtk3` (Fedora, openSUSE), `python-gobject` + `gtk3`
+(Arch), `dev-python/pygobject` + `x11-libs/gtk+:3` (Gentoo).
+
 ### Installateur (live uniquement)
 
 Depuis le live, la commande `install` (ou l'entrée « Installer sur le
@@ -212,6 +235,10 @@ Liste des commandes avec leurs fonction :
 ```bash
 sudo respinguy
 ```
+Interface graphique :
+```bash
+respinguy-g
+```
 Modifier la configuration :
 ```bash
 sudo respinguy-config
@@ -242,6 +269,10 @@ sudo install
 Liste des commandes avec leurs fonction :
 ```bash
 respinguy
+```
+Interface graphique :
+```bash
+respinguy-g
 ```
 Modifier la configuration :
 ```bash

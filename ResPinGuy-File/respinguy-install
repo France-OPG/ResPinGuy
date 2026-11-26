@@ -29,7 +29,7 @@ else
 fi
 
 # Etat partage entre l'interface et le worker
-RPG_STATUS="/tmp/respinguy-install.status"
+RPG_STATUS="${RPG_STATUS:-/tmp/respinguy-install.status}"
 RPG_WORKER="${RPG_WORKER:-0}"
 
 # Barre de progression
@@ -38,7 +38,8 @@ rpg_i_step() {
     local msg="$2"
     local width=30 fill empty bar
     printf '%s|%s\n' "$pct" "$msg" > "$RPG_STATUS.tmp" 2>/dev/null \
-        && mv -f "$RPG_STATUS.tmp" "$RPG_STATUS" 2>/dev/null || true
+        && chmod 644 "$RPG_STATUS.tmp" 2>/dev/null || true
+    mv -f "$RPG_STATUS.tmp" "$RPG_STATUS" 2>/dev/null || true
     fill=$((pct * width / 100))
     empty=$((width - fill))
     bar=$(printf '%*s' "$fill" '' | tr ' ' '#')
@@ -49,11 +50,11 @@ rpg_i_step() {
 }
 
 RPG_FILE_DIR="/usr/share/ResPinGuy-File"
-RPG_LOG="/tmp/respinguy-install.log"
+RPG_LOG="${RPG_LOG:-/tmp/respinguy-install.log}"
 RPG_TARGET="/mnt/respinguy-target"
 CHROOT_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.40"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.41"
 
 # Interface : whiptail/dialog si disponibles, sinon texte
 RPG_UI="basic"

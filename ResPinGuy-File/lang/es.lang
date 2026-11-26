@@ -311,6 +311,7 @@ INTERFAZ
   respinguy --build       Compilación directa
   respinguy --config      Configuración directa
   respinguy --deps        Comprobación de dependencias
+  respinguy-g             Interfaz gráfica (GTK3)
 
 COMANDOS
   respinguy-build         Crear la imagen ISO

@@ -12,18 +12,31 @@ git clone https://github.com/France-OPG/ResPinGuy.git
 if [ $? -ne 0 ]; then echo "[ERREUR] Échec du clonage GitHub."; exit 1; fi
 cd ResPinGuy || exit 1
 read -p "Appuyez sur Entrée pour continuer la mise à jour..."
-cp ./ResPinGuy-CMD/respinguy /usr/bin/         && chmod +x /usr/bin/respinguy         && echo "... [1/9]"
-cp ./ResPinGuy-CMD/respinguy-app-rm /usr/bin/  && chmod +x /usr/bin/respinguy-app-rm  && echo "... [2/9]"
-cp ./ResPinGuy-CMD/respinguy-app-up /usr/bin/  && chmod +x /usr/bin/respinguy-app-up  && echo "... [3/9]"
-cp ./ResPinGuy-CMD/respinguy-build /usr/bin/   && chmod +x /usr/bin/respinguy-build   && echo "... [4/9]"
-cp ./ResPinGuy-CMD/respinguy-config /usr/bin/  && chmod +x /usr/bin/respinguy-config  && echo "... [5/9]"
-cp ./ResPinGuy-CMD/respinguy-app-dep /usr/bin/ && chmod +x /usr/bin/respinguy-app-dep && echo "... [6/9]"
-cp ./ResPinGuy-CMD/respinguy-app-dep-force-install /usr/bin/ && chmod +x /usr/bin/respinguy-app-dep-force-install && echo "... [7/9]"
-cp ./ResPinGuy-CMD/install /usr/local/bin/install && chmod +x /usr/local/bin/install && echo "... [8/9]"
-cp ./ResPinGuy-CMD/rpg-install /usr/bin/ && chmod +x /usr/bin/rpg-install && echo "... [9/9]"
+cp ./ResPinGuy-CMD/respinguy /usr/bin/         && chmod +x /usr/bin/respinguy         && echo "... [1/10]"
+cp ./ResPinGuy-CMD/respinguy-app-rm /usr/bin/  && chmod +x /usr/bin/respinguy-app-rm  && echo "... [2/10]"
+cp ./ResPinGuy-CMD/respinguy-app-up /usr/bin/  && chmod +x /usr/bin/respinguy-app-up  && echo "... [3/10]"
+cp ./ResPinGuy-CMD/respinguy-build /usr/bin/   && chmod +x /usr/bin/respinguy-build   && echo "... [4/10]"
+cp ./ResPinGuy-CMD/respinguy-config /usr/bin/  && chmod +x /usr/bin/respinguy-config  && echo "... [5/10]"
+cp ./ResPinGuy-CMD/respinguy-app-dep /usr/bin/ && chmod +x /usr/bin/respinguy-app-dep && echo "... [6/10]"
+cp ./ResPinGuy-CMD/respinguy-app-dep-force-install /usr/bin/ && chmod +x /usr/bin/respinguy-app-dep-force-install && echo "... [7/10]"
+cp ./ResPinGuy-CMD/install /usr/local/bin/install && chmod +x /usr/local/bin/install && echo "... [8/10]"
+cp ./ResPinGuy-CMD/rpg-install /usr/bin/ && chmod +x /usr/bin/rpg-install && echo "... [9/10]"
+cp ./ResPinGuy-GUI/respinguy-g /usr/bin/ && chmod +x /usr/bin/respinguy-g && echo "... [10/10]"
 rm -f /usr/bin/respinguy-install
 echo "Les commandes sont mises à jour."
-cp -r ResPinGuy-File/ /usr/share/ && echo "... [1/1]"
+cp -r ResPinGuy-File/ /usr/share/ && echo "... [1/5]"
+cp -r ResPinGuy-File-Config/ /usr/share/ && echo "... [2/5]"
+rm -rf /usr/share/respinguy-gui
+cp -r ResPinGuy-GUI/ /usr/share/respinguy-gui && echo "... [3/5]"
+mkdir -p /usr/share/applications /usr/share/icons/hicolor/scalable/apps
+cp -f ResPinGuy-GUI/desktop/respinguy-g.desktop /usr/share/applications/ && \
+cp -f ResPinGuy-GUI/desktop/respinguy-install-g.desktop /usr/share/applications/ && \
+chmod 0644 /usr/share/applications/respinguy-g.desktop /usr/share/applications/respinguy-install-g.desktop && \
+echo "... [4/5]"
+cp -f ResPinGuy-GUI/assets/respinguy.svg /usr/share/icons/hicolor/scalable/apps/respinguy.svg && \
+chmod 0644 /usr/share/icons/hicolor/scalable/apps/respinguy.svg && echo "... [5/5]"
+command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database -q /usr/share/applications 2>/dev/null || true
+command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor 2>/dev/null || true
 echo "Les fichiers sont mis à jour."
 cd /tmp/ && rm -rf ResPinGuy && cd ~
 clear

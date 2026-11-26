@@ -4,6 +4,24 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.41] - 2026-11-26
+
+### Ajouté
+- Interface graphique `respinguy-g` (GTK3 + Python/PyGObject) :
+  - installateur graphique en live : disques, options, confirmation,
+    progression, journal et redémarrage ;
+  - fenêtre de configuration et de build sur système installé ;
+  - icône « Installer ResPinGuy » sur le bureau du live ;
+  - thème ResPinGuy (noir/jaune/bleu/vert/rouge) ;
+  - fallback vers l'interface texte si GTK3/PyGObject est absent.
+- Dépendances graphiques optionnelles (PyGObject + GTK3) installées
+  automatiquement sur un système avec bureau.
+- Lanceurs `.desktop`, icône SVG et commande `respinguy-g`.
+
+### Modifié
+- L'installateur accepte `RPG_LOG` et `RPG_STATUS` pour être piloté par l'interface
+  graphique.
+
 ## [0.40] - 2026-11-26
 
 ### Ajouté
