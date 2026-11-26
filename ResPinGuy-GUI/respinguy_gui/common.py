@@ -35,7 +35,7 @@ LANG_NAMES = {
 }
 
 COLORS = {
-    "bg": "#000000",
+    "bg": "#141414",
     "yellow": "#ffb516",
     "blue": "#1d2f52",
     "green": "#73ba25",
@@ -44,47 +44,47 @@ COLORS = {
 
 CSS = """
 window, dialog, messagedialog, .background {
-    background-image: none; background-color: #000000; color: #ffb516;
+    background-image: none; background-color: #141414; color: #ffb516;
 }
 window > box, window > grid, notebook, notebook > stack, notebook > stack > box,
 notebook > stack > box > box, notebook > stack > scrolledwindow,
 notebook > stack > scrolledwindow > viewport, notebook > stack > viewport,
 notebook > stack > viewport > box, viewport, viewport > box, grid {
-    background-image: none; background-color: #000000;
+    background-image: none; background-color: #141414;
 }
-headerbar { background-image: none; background-color: #000000; color: #ffb516;
+headerbar { background-image: none; background-color: #141414; color: #ffb516;
             border-bottom: 2px solid #1d2f52; box-shadow: none; }
 headerbar .title { color: #ffb516; font-weight: bold; }
 label, check, radio { color: #ffb516; }
 button { background-image: none; background-color: #1d2f52; color: #ffb516;
          border: 1px solid #1d2f52; border-radius: 4px; padding: 6px 14px; }
 button label { color: #ffb516; }
-button:hover { background-image: none; background-color: #73ba25; color: #000000; }
-button:hover label { color: #000000; }
-button:active { background-image: none; background-color: #5a941d; color: #000000; }
-button:active label { color: #000000; }
-button.suggested-action { background-image: none; background-color: #73ba25; color: #000000; }
-button.suggested-action label { color: #000000; }
+button:hover { background-image: none; background-color: #73ba25; color: #141414; }
+button:hover label { color: #141414; }
+button:active { background-image: none; background-color: #5a941d; color: #141414; }
+button:active label { color: #141414; }
+button.suggested-action { background-image: none; background-color: #73ba25; color: #141414; }
+button.suggested-action label { color: #141414; }
 button.destructive-action { background-image: none; background-color: #ee0000; color: #ffffff; }
 button.destructive-action label { color: #ffffff; }
 button:disabled { background-image: none; background-color: #111111; color: #6b5a1c; }
 button:disabled label { color: #6b5a1c; }
-entry, spinbutton, combobox button { background-image: none; background-color: #0a0a0a;
+entry, spinbutton, combobox button { background-image: none; background-color: #141414;
         color: #ffb516; border: 1px solid #1d2f52; border-radius: 4px; }
 entry:focus, combobox button:focus { border-color: #73ba25; }
 entry:disabled { background-image: none; background-color: #101010; color: #6b5a1c; }
-combobox window, menu, .menu { background-image: none; background-color: #000000; color: #ffb516; }
-menuitem:hover { background-image: none; background-color: #73ba25; color: #000000; }
-notebook { background-image: none; background-color: #000000; }
-notebook tab { background-image: none; background-color: #000000; color: #ffb516; padding: 8px 18px; }
+combobox window, menu, .menu { background-image: none; background-color: #141414; color: #ffb516; }
+menuitem:hover { background-image: none; background-color: #73ba25; color: #141414; }
+notebook { background-image: none; background-color: #141414; }
+notebook tab { background-image: none; background-color: #141414; color: #ffb516; padding: 8px 18px; }
 notebook tab:checked { background-image: none; background-color: #1d2f52; color: #ffb516; }
 frame > border { border: 1px solid #1d2f52; }
-scrolledwindow { border: 1px solid #1d2f52; background-image: none; background-color: #000000; }
-scrolledwindow > viewport { background-image: none; background-color: #000000; }
-textview, textview text { background-image: none; background-color: #050505; color: #ffb516; }
+scrolledwindow { border: 1px solid #1d2f52; background-image: none; background-color: #141414; }
+scrolledwindow > viewport { background-image: none; background-color: #141414; }
+textview, textview text { background-image: none; background-color: #141414; color: #ffb516; }
 progressbar trough { background-image: none; background-color: #1d2f52; border-radius: 4px; }
 progressbar progress { background-image: none; background-color: #73ba25; border-radius: 4px; }
-assistant .sidebar { background-image: none; background-color: #000000; color: #ffb516; }
+assistant .sidebar { background-image: none; background-color: #141414; color: #ffb516; }
 assistant .sidebar label { color: #ffb516; }
 .dim-label { color: #b98b18; }
 .error-label { color: #ee0000; }
@@ -95,9 +95,9 @@ assistant .sidebar label { color: #ffb516; }
 def read_version() -> str:
     try:
         text = (FILE_DIR / "VERSION").read_text(encoding="utf-8").strip()
-        return text or "0.43"
+        return text or "0.44"
     except OSError:
-        return "0.43"
+        return "0.44"
 
 
 def is_live() -> bool:

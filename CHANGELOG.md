@@ -4,6 +4,18 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.44] - 2026-11-26
+
+### Modifié
+- Thème : le noir passe à `#141414` (interface graphique, écrans TUI et icône).
+
+### Corrigé
+- Live : une seule icône « Installer ResPinGuy » est créée sur le bureau.
+  L'icône « ResPinGuy » ajoutée automatiquement est retirée ; l'icône ajoutée
+  manuellement par l'utilisateur est conservée.
+- LXDE/PCManFM : `quick_exec=1` pour lancer directement les raccourcis, sans la
+  boîte « Le fichier texte … semble être un script exécutable ».
+
 ## [0.43] - 2026-11-26
 
 ### Corrigé

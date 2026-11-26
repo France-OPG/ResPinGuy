@@ -32,6 +32,21 @@ fi
 
 mkdir -p "$desktop_dir" 2>/dev/null || exit 0
 
+# PCManFM/LXDE : ne pas afficher la boite "script executable" pour les lanceurs.
+libfm_conf="$HOME/.config/libfm/libfm.conf"
+mkdir -p "$(dirname "$libfm_conf")" 2>/dev/null || true
+if [ ! -f "$libfm_conf" ]; then
+    printf '[config]\nquick_exec=1\n' > "$libfm_conf" 2>/dev/null || true
+elif grep -q '^\[config\]' "$libfm_conf" 2>/dev/null; then
+    if grep -q '^quick_exec=' "$libfm_conf" 2>/dev/null; then
+        sed -i 's/^quick_exec=.*/quick_exec=1/' "$libfm_conf" 2>/dev/null || true
+    else
+        sed -i '/^\[config\]/a quick_exec=1' "$libfm_conf" 2>/dev/null || true
+    fi
+else
+    printf '\n[config]\nquick_exec=1\n' >> "$libfm_conf" 2>/dev/null || true
+fi
+
 place_icon() {
     local src="$1"
     local name="$2"
@@ -50,8 +65,15 @@ place_icon() {
     echo "Lanceur placé : $dst"
 }
 
+# Ancienne icône principale créée par erreur : on la retire (pas l'icône manuelle).
+old_main="$desktop_dir/ResPinGuy.desktop"
+if [ -f "$old_main" ] && grep -qE 'respinguy-gui-launch|Exec=/usr/bin/respinguy-g' "$old_main" 2>/dev/null; then
+    rm -f "$old_main" 2>/dev/null || true
+    echo "Ancienne icône principale retirée : $old_main"
+fi
+
+# Une seule icône ResPinGuy est créée : l'installateur.
 place_icon "/usr/share/applications/respinguy-install-g.desktop" "Installer ResPinGuy.desktop"
-place_icon "/usr/share/applications/respinguy-g.desktop" "ResPinGuy.desktop"
 
 if command -v notify-send >/dev/null 2>&1; then
     notify-send -i respinguy -a ResPinGuy \

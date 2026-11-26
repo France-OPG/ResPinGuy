@@ -23,7 +23,7 @@ if [ -n "${RPG_FORCE_COLOR-}" ] || [ -t 1 ]; then
     C_BLUE=$'\033[38;2;29;47;82m'
     C_RED=$'\033[38;2;238;0;0m'
     C_YELLOW=$'\033[38;2;255;181;22m'
-    C_BLACK_BG=$'\033[48;2;0;0;0m'
+    C_BLACK_BG=$'\033[48;2;20;20;20m'
 else
     C_RESET=""; C_GREEN=""; C_AMBER=""; C_BLUE=""; C_RED=""; C_YELLOW=""; C_BLACK_BG=""
 fi
@@ -54,7 +54,7 @@ RPG_LOG="${RPG_LOG:-/tmp/respinguy-install.log}"
 RPG_TARGET="/mnt/respinguy-target"
 CHROOT_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.43"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.44"
 
 # Interface : whiptail/dialog si disponibles, sinon texte
 RPG_UI="basic"

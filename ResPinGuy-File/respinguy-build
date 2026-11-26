@@ -327,7 +327,7 @@ EOF
 
     # Icône de l'installateur graphique sur le bureau du live.
     mkdir -p "$RPG_ETC_TMP/xdg/autostart"
-    cat > "$RPG_ETC_TMP/xdg/autostart/respinguy-live-desktop.desktop" <<'EOF'
+    cat > "$RPG_ETC_TMP/xdg/autostart/00-respinguy-live-desktop.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
 Name=ResPinGuy Live Desktop
@@ -337,7 +337,7 @@ Terminal=false
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
 EOF
-    chmod 0644 "$RPG_ETC_TMP/xdg/autostart/respinguy-live-desktop.desktop"
+    chmod 0644 "$RPG_ETC_TMP/xdg/autostart/00-respinguy-live-desktop.desktop"
 
     echo "[INFO] Live : utilisateur $RPG_LIVE_USER (autologin, sans mot de passe)"
 fi
