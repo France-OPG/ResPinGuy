@@ -4,6 +4,15 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.42] - 2026-11-26
+
+### Corrigé
+- Icônes du bureau du live : fichiers `.desktop` ASCII minimaux, `Exec` via
+  `/bin/bash` et un lanceur dédié, nettoyage des BOM/CRLF et permissions 0755.
+- Création des deux icônes « ResPinGuy » et « Installer ResPinGuy ».
+- Le lanceur graphique affiche un message clair si `respinguy-g` ou GTK3 est
+  absent, au lieu d'une erreur « entrée de bureau invalide ».
+
 ## [0.41] - 2026-11-26
 
 ### Ajouté

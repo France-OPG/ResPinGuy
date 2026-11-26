@@ -1,0 +1,53 @@
+#!/bin/bash
+#----------------------------------------------------------------------------------------------
+# ResPinGuy - lanceur utilisé par les icônes du bureau
+# Il reste valide même si l'interface graphique n'est pas encore installée.
+#----------------------------------------------------------------------------------------------
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin${PATH:+:$PATH}"
+
+RPG_GUI="/usr/bin/respinguy-g"
+
+if [ -x "$RPG_GUI" ]; then
+    exec "$RPG_GUI" "$@"
+fi
+
+# Repli : si l'installateur graphique manque, proposer l'installateur texte.
+if [ "${1-}" = "--install" ] && [ -f /usr/share/ResPinGuy-File/respinguy-install ]; then
+    for term in x-terminal-emulator lxterminal xfce4-terminal gnome-terminal konsole xterm; do
+        command -v "$term" >/dev/null 2>&1 || continue
+        exec "$term" -e sudo bash /usr/share/ResPinGuy-File/respinguy-install
+    done
+fi
+
+msg="L'interface graphique ResPinGuy n'est pas installée.
+
+Réinstallez ResPinGuy depuis le dépôt :
+  sudo bash install
+
+Ou utilisez l'installateur texte :
+  sudo respinguy-install"
+
+if command -v zenity >/dev/null 2>&1; then
+    zenity --error --title="ResPinGuy" --text="$msg" 2>/dev/null
+elif command -v yad >/dev/null 2>&1; then
+    yad --error --title="ResPinGuy" --text="$msg" 2>/dev/null
+elif command -v xmessage >/dev/null 2>&1; then
+    xmessage -center "$msg" 2>/dev/null
+else
+    tmp=$(mktemp 2>/dev/null) || tmp=""
+    if [ -n "$tmp" ]; then
+        {
+            echo '#!/bin/bash'
+            printf 'cat <<"EOF"\n%s\nEOF\n' "$msg"
+            echo 'read -r -p "Appuyez sur Entrée pour fermer..." _'
+        } > "$tmp"
+        chmod +x "$tmp"
+        for term in x-terminal-emulator lxterminal xfce4-terminal gnome-terminal konsole xterm; do
+            command -v "$term" >/dev/null 2>&1 || continue
+            exec "$term" -e "$tmp"
+        done
+        rm -f "$tmp"
+    fi
+    printf '%s\n' "$msg" >&2
+fi
+exit 1

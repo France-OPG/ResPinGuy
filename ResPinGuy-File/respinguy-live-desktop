@@ -13,18 +13,10 @@ exec >> "$LOG" 2>&1
 [ -n "${HOME-}" ] || exit 0
 [ -n "${DISPLAY-}${WAYLAND_DISPLAY-}" ] || exit 0
 
-src="/usr/share/applications/respinguy-install-g.desktop"
-[ -f "$src" ] || { echo "Lanceur absent : $src"; exit 0; }
-command -v respinguy-g >/dev/null 2>&1 || { echo "respinguy-g absent"; exit 0; }
-GUI_OK=0
-for p in python3 python; do
-    command -v "$p" >/dev/null 2>&1 || continue
-    if "$p" -c 'import gi; gi.require_version("Gtk", "3.0")' >/dev/null 2>&1; then
-        GUI_OK=1
-        break
-    fi
-done
-[ "$GUI_OK" -eq 1 ] || { echo "GTK3/PyGObject absent"; exit 0; }
+[ -f /usr/share/ResPinGuy-File/respinguy-gui-launch ] || {
+    echo "Lanceur graphique absent : /usr/share/ResPinGuy-File/respinguy-gui-launch"
+    exit 0
+}
 
 desktop_dir=""
 if command -v xdg-user-dir >/dev/null 2>&1; then
@@ -39,22 +31,31 @@ if [ -z "$desktop_dir" ] || [ "$desktop_dir" = "$HOME" ]; then
 fi
 
 mkdir -p "$desktop_dir" 2>/dev/null || exit 0
-dst="$desktop_dir/Installer ResPinGuy.desktop"
-cp -f "$src" "$dst" 2>/dev/null || exit 0
-chmod +x "$dst" 2>/dev/null || true
 
-# GNOME/Nautilus : marquer le lanceur comme fiable
-if command -v gio >/dev/null 2>&1; then
-    gio set "$dst" metadata::trusted true 2>/dev/null || true
-fi
+place_icon() {
+    local src="$1"
+    local name="$2"
+    local dst="$desktop_dir/$name"
+    [ -f "$src" ] || { echo "Lanceur absent : $src"; return 0; }
+    # Remplace un ancien fichier (ou un lien symbolique) sans toucher a la source.
+    rm -f "$dst" 2>/dev/null || true
+    # Certains transferts Windows/Linux laissent des CRLF : on nettoie.
+    if ! sed '1s/^\xEF\xBB\xBF//; s/\r$//' "$src" > "$dst" 2>/dev/null; then
+        cp -f "$src" "$dst" 2>/dev/null || return 0
+    fi
+    chmod 0755 "$dst" 2>/dev/null || true
+    if command -v gio >/dev/null 2>&1; then
+        gio set "$dst" metadata::trusted true 2>/dev/null || true
+    fi
+    echo "Lanceur placé : $dst"
+}
 
-# Certains environnements demandent aussi un fichier .desktop exécutable
-# dans le dossier Bureau uniquement ; c'est déjà le cas.
+place_icon "/usr/share/applications/respinguy-install-g.desktop" "Installer ResPinGuy.desktop"
+place_icon "/usr/share/applications/respinguy-g.desktop" "ResPinGuy.desktop"
 
 if command -v notify-send >/dev/null 2>&1; then
     notify-send -i respinguy -a ResPinGuy \
         "ResPinGuy" "L'installateur est disponible sur le bureau." 2>/dev/null || true
 fi
 
-echo "Installateur placé dans : $dst"
 exit 0

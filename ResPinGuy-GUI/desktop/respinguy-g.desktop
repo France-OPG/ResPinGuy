@@ -1,12 +1,8 @@
 [Desktop Entry]
 Type=Application
-Version=1.0
 Name=ResPinGuy
-GenericName=Créateur d'image ISO
-Comment=Créer une image ISO de votre système Linux
-Exec=respinguy-g
+Comment=Create a Linux ISO image
+Exec=/bin/bash /usr/share/ResPinGuy-File/respinguy-gui-launch
 Icon=respinguy
 Terminal=false
 Categories=System;Utility;
-Keywords=iso;live;linux;respinguy;build;
-StartupNotify=true

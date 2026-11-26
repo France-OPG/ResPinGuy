@@ -79,9 +79,9 @@ assistant .sidebar label { color: #ffb516; }
 def read_version() -> str:
     try:
         text = (FILE_DIR / "VERSION").read_text(encoding="utf-8").strip()
-        return text or "0.41"
+        return text or "0.42"
     except OSError:
-        return "0.41"
+        return "0.42"
 
 
 def is_live() -> bool:

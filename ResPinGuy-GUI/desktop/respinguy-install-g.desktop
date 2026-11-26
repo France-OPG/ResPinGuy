@@ -1,12 +1,8 @@
 [Desktop Entry]
 Type=Application
-Version=1.0
 Name=Installer ResPinGuy
-GenericName=Installateur
-Comment=Installer le système ResPinGuy sur un disque
-Exec=respinguy-g --install
+Comment=Install the live system to a disk
+Exec=/bin/bash /usr/share/ResPinGuy-File/respinguy-gui-launch --install
 Icon=respinguy
 Terminal=false
 Categories=System;
-Keywords=install;installer;live;respinguy;disk;
-StartupNotify=true

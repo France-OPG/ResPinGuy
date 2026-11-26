@@ -8,7 +8,7 @@ RPG_GUI_DIR="${RPG_GUI_DIR:-/usr/share/respinguy-gui}"
 
 if [ "${1-}" = "--version" ] || [ "${1-}" = "-V" ]; then
     v=$(cat /usr/share/ResPinGuy-File/VERSION 2>/dev/null | head -n1)
-    [ -n "$v" ] || v="0.41"
+    [ -n "$v" ] || v="0.42"
     echo "ResPinGuy $v"
     exit 0
 fi
@@ -28,6 +28,8 @@ if [ -z "$PYTHON" ]; then
         zenity --error --title="ResPinGuy" --text="$msg" 2>/dev/null
     elif command -v yad >/dev/null 2>&1; then
         yad --error --title="ResPinGuy" --text="$msg" 2>/dev/null
+    elif command -v xmessage >/dev/null 2>&1; then
+        xmessage -center "$(printf '%b' "$msg")" 2>/dev/null
     else
         printf 'ResPinGuy : %b\n' "$msg" >&2
     fi
