@@ -45,6 +45,11 @@ COLORS = {
 CSS = """
 window, dialog, messagedialog, .background {
     background-image: none; background-color: #141414; color: #ffb516;
+    border: none; box-shadow: none;
+}
+decoration, window.csd, .csd, window > decoration {
+    background-image: none; background-color: #141414;
+    border: none; box-shadow: none; border-radius: 0;
 }
 window > box, window > grid, notebook, notebook > stack, notebook > stack > box,
 notebook > stack > box > box, notebook > stack > scrolledwindow,
@@ -53,11 +58,18 @@ notebook > stack > viewport > box, viewport, viewport > box, grid {
     background-image: none; background-color: #141414;
 }
 headerbar { background-image: none; background-color: #141414; color: #ffb516;
-            border-bottom: 2px solid #1d2f52; box-shadow: none; }
+            border: none; border-bottom: 2px solid #1d2f52; box-shadow: none; }
 headerbar .title { color: #ffb516; font-weight: bold; }
+headerbar button.titlebutton {
+    background-image: none; background-color: #1d2f52; color: #ffb516;
+    border: none; border-radius: 4px; padding: 4px; box-shadow: none;
+}
+headerbar button.titlebutton:hover { background-color: #73ba25; color: #141414; }
+headerbar button.titlebutton.close { background-color: #ee0000; color: #ffffff; }
+headerbar button.titlebutton.close:hover { background-color: #ff3333; color: #ffffff; }
 label, check, radio { color: #ffb516; }
 button { background-image: none; background-color: #1d2f52; color: #ffb516;
-         border: 1px solid #1d2f52; border-radius: 4px; padding: 6px 14px; }
+         border: 1px solid #1d2f52; border-radius: 4px; padding: 6px 14px; box-shadow: none; }
 button label { color: #ffb516; }
 button:hover { background-image: none; background-color: #73ba25; color: #141414; }
 button:hover label { color: #141414; }
@@ -70,21 +82,35 @@ button.destructive-action label { color: #ffffff; }
 button:disabled { background-image: none; background-color: #111111; color: #6b5a1c; }
 button:disabled label { color: #6b5a1c; }
 entry, spinbutton, combobox button { background-image: none; background-color: #141414;
-        color: #ffb516; border: 1px solid #1d2f52; border-radius: 4px; }
+        color: #ffb516; border: 1px solid #1d2f52; border-radius: 4px; box-shadow: none; }
 entry:focus, combobox button:focus { border-color: #73ba25; }
 entry:disabled { background-image: none; background-color: #101010; color: #6b5a1c; }
-combobox window, menu, .menu { background-image: none; background-color: #141414; color: #ffb516; }
+combobox window, menu, .menu { background-image: none; background-color: #141414; color: #ffb516; border: none; }
 menuitem:hover { background-image: none; background-color: #73ba25; color: #141414; }
-notebook { background-image: none; background-color: #141414; }
-notebook tab { background-image: none; background-color: #141414; color: #ffb516; padding: 8px 18px; }
-notebook tab:checked { background-image: none; background-color: #1d2f52; color: #ffb516; }
+notebook { background-image: none; background-color: #141414; border: none; }
+notebook > header, notebook > .header,
+notebook > header > tabs, notebook > .header > tabs {
+    background-image: none; background-color: #141414; border: none; box-shadow: none;
+}
+notebook tab, notebook > header > tabs > tab, notebook > .header > tabs > tab {
+    background-image: none; background-color: #141414; color: #ffb516;
+    border: none; box-shadow: none; padding: 8px 18px;
+}
+notebook tab:checked, notebook > header > tabs > tab:checked,
+notebook > .header > tabs > tab:checked {
+    background-image: none; background-color: #1d2f52; color: #ffb516;
+    border: none; box-shadow: none;
+}
+notebook tab:hover, notebook > header > tabs > tab:hover {
+    background-image: none; background-color: #1d2f52;
+}
 frame > border { border: 1px solid #1d2f52; }
-scrolledwindow { border: 1px solid #1d2f52; background-image: none; background-color: #141414; }
+scrolledwindow { border: 1px solid #1d2f52; background-image: none; background-color: #141414; box-shadow: none; }
 scrolledwindow > viewport { background-image: none; background-color: #141414; }
-textview, textview text { background-image: none; background-color: #141414; color: #ffb516; }
+textview, textview text { background-image: none; background-color: #141414; color: #ffb516; border: none; }
 progressbar trough { background-image: none; background-color: #1d2f52; border-radius: 4px; }
 progressbar progress { background-image: none; background-color: #73ba25; border-radius: 4px; }
-assistant .sidebar { background-image: none; background-color: #141414; color: #ffb516; }
+assistant .sidebar { background-image: none; background-color: #141414; color: #ffb516; border: none; }
 assistant .sidebar label { color: #ffb516; }
 .dim-label { color: #b98b18; }
 .error-label { color: #ee0000; }
@@ -95,9 +121,9 @@ assistant .sidebar label { color: #ffb516; }
 def read_version() -> str:
     try:
         text = (FILE_DIR / "VERSION").read_text(encoding="utf-8").strip()
-        return text or "0.44"
+        return text or "0.45"
     except OSError:
-        return "0.44"
+        return "0.45"
 
 
 def is_live() -> bool:

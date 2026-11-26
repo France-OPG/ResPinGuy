@@ -4,6 +4,13 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.45] - 2026-11-26
+
+### Corrigé
+- Suppression des bordures blanches : fenêtre/décoration, en-tête du notebook
+  et zone vide à droite des onglets.
+- Onglets et champs sans bordure claire parasite ; thème plus propre.
+
 ## [0.44] - 2026-11-26
 
 ### Modifié

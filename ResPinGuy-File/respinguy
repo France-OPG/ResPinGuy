@@ -21,7 +21,7 @@ RPG_LANG_DIR="$RPG_FILE_DIR/lang"
 RPG_LANG="${RPG_LANG-}"
 RPG_BACKTITLE="ResPinGuy"
 RPG_VERSION=$(cat "$RPG_FILE_DIR/VERSION" 2>/dev/null | head -n1)
-[ -n "$RPG_VERSION" ] || RPG_VERSION="0.44"
+[ -n "$RPG_VERSION" ] || RPG_VERSION="0.45"
 
 # Palette officielle
 RPG_HEX_NAVY="#1d2f52"
