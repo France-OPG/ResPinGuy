@@ -43,32 +43,48 @@ COLORS = {
 }
 
 CSS = """
-window, .background { background-color: #000000; color: #ffb516; }
+window, dialog, messagedialog, .background {
+    background-image: none; background-color: #000000; color: #ffb516;
+}
+window > box, window > grid, notebook, notebook > stack, notebook > stack > box,
+notebook > stack > box > box, notebook > stack > scrolledwindow,
+notebook > stack > scrolledwindow > viewport, notebook > stack > viewport,
+notebook > stack > viewport > box, viewport, viewport > box, grid {
+    background-image: none; background-color: #000000;
+}
 headerbar { background-image: none; background-color: #000000; color: #ffb516;
             border-bottom: 2px solid #1d2f52; box-shadow: none; }
 headerbar .title { color: #ffb516; font-weight: bold; }
 label, check, radio { color: #ffb516; }
 button { background-image: none; background-color: #1d2f52; color: #ffb516;
          border: 1px solid #1d2f52; border-radius: 4px; padding: 6px 14px; }
-button:hover { background-color: #73ba25; color: #000000; }
-button:active { background-color: #5a941d; color: #000000; }
-button.suggested-action { background-color: #73ba25; color: #000000; }
-button.destructive-action { background-color: #ee0000; color: #ffffff; }
-button:disabled { background-color: #111111; color: #6b5a1c; }
-entry, spinbutton, combobox button { background-color: #0a0a0a; color: #ffb516;
-        border: 1px solid #1d2f52; border-radius: 4px; }
+button label { color: #ffb516; }
+button:hover { background-image: none; background-color: #73ba25; color: #000000; }
+button:hover label { color: #000000; }
+button:active { background-image: none; background-color: #5a941d; color: #000000; }
+button:active label { color: #000000; }
+button.suggested-action { background-image: none; background-color: #73ba25; color: #000000; }
+button.suggested-action label { color: #000000; }
+button.destructive-action { background-image: none; background-color: #ee0000; color: #ffffff; }
+button.destructive-action label { color: #ffffff; }
+button:disabled { background-image: none; background-color: #111111; color: #6b5a1c; }
+button:disabled label { color: #6b5a1c; }
+entry, spinbutton, combobox button { background-image: none; background-color: #0a0a0a;
+        color: #ffb516; border: 1px solid #1d2f52; border-radius: 4px; }
 entry:focus, combobox button:focus { border-color: #73ba25; }
-combobox window, menu, .menu { background-color: #000000; color: #ffb516; }
-menuitem:hover { background-color: #73ba25; color: #000000; }
-notebook { background-color: #000000; }
-notebook tab { background-color: #000000; color: #ffb516; padding: 8px 18px; }
-notebook tab:checked { background-color: #1d2f52; color: #ffb516; }
+entry:disabled { background-image: none; background-color: #101010; color: #6b5a1c; }
+combobox window, menu, .menu { background-image: none; background-color: #000000; color: #ffb516; }
+menuitem:hover { background-image: none; background-color: #73ba25; color: #000000; }
+notebook { background-image: none; background-color: #000000; }
+notebook tab { background-image: none; background-color: #000000; color: #ffb516; padding: 8px 18px; }
+notebook tab:checked { background-image: none; background-color: #1d2f52; color: #ffb516; }
 frame > border { border: 1px solid #1d2f52; }
-scrolledwindow { border: 1px solid #1d2f52; }
-textview, textview text { background-color: #050505; color: #ffb516; }
-progressbar trough { background-color: #1d2f52; border-radius: 4px; }
-progressbar progress { background-color: #73ba25; border-radius: 4px; }
-assistant .sidebar { background-color: #000000; color: #ffb516; }
+scrolledwindow { border: 1px solid #1d2f52; background-image: none; background-color: #000000; }
+scrolledwindow > viewport { background-image: none; background-color: #000000; }
+textview, textview text { background-image: none; background-color: #050505; color: #ffb516; }
+progressbar trough { background-image: none; background-color: #1d2f52; border-radius: 4px; }
+progressbar progress { background-image: none; background-color: #73ba25; border-radius: 4px; }
+assistant .sidebar { background-image: none; background-color: #000000; color: #ffb516; }
 assistant .sidebar label { color: #ffb516; }
 .dim-label { color: #b98b18; }
 .error-label { color: #ee0000; }
@@ -79,9 +95,9 @@ assistant .sidebar label { color: #ffb516; }
 def read_version() -> str:
     try:
         text = (FILE_DIR / "VERSION").read_text(encoding="utf-8").strip()
-        return text or "0.42"
+        return text or "0.43"
     except OSError:
-        return "0.42"
+        return "0.43"
 
 
 def is_live() -> bool:
@@ -120,7 +136,7 @@ def apply_theme() -> None:
     provider = Gtk.CssProvider()
     provider.load_from_data(CSS.encode("utf-8"))
     Gtk.StyleContext.add_provider_for_screen(
-        screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_USER
     )
 
 

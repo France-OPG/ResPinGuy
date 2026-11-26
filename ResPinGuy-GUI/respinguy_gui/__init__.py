@@ -1,3 +1,3 @@
 """Interface graphique ResPinGuy."""
 
-__version__ = "0.42"
+__version__ = "0.43"

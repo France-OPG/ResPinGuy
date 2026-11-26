@@ -4,6 +4,13 @@ Toutes les modifications notables de ResPinGuy sont consignées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 Les entrées les plus récentes sont en haut.
 
+## [0.43] - 2026-11-26
+
+### Corrigé
+- Thème GTK : fond noir appliqué à tout le contenu (fenêtre, notebook, stack,
+  viewport, champs et zones de texte), boutons et libellés lisibles.
+- Page « Créer l'image ISO » : titre et consigne explicites.
+
 ## [0.42] - 2026-11-26
 
 ### Corrigé

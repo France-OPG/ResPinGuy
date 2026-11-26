@@ -128,6 +128,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.set_titlebar(header)
 
         notebook = Gtk.Notebook()
+        self.notebook = notebook
         notebook.append_page(self._build_config_page(), Gtk.Label(label="Configuration"))
         notebook.append_page(self._build_build_page(), Gtk.Label(label="Image ISO"))
         notebook.append_page(self._build_tools_page(), Gtk.Label(label="Outils"))
@@ -203,11 +204,14 @@ class MainWindow(Gtk.ApplicationWindow):
         outer.pack_start(grid, False, False, 0)
 
         buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        build_now = Gtk.Button(label="Enregistrer et créer l'image")
+        build_now.get_style_context().add_class("suggested-action")
+        build_now.connect("clicked", lambda *_: self._save_and_build())
         save = Gtk.Button(label="Enregistrer la configuration")
-        save.get_style_context().add_class("suggested-action")
         save.connect("clicked", lambda *_: self.save_config(True))
         reset = Gtk.Button(label="Recharger")
         reset.connect("clicked", lambda *_: self.load_config())
+        buttons.pack_end(build_now, False, False, 0)
         buttons.pack_end(save, False, False, 0)
         buttons.pack_end(reset, False, False, 0)
         outer.pack_start(buttons, False, False, 0)
@@ -319,6 +323,14 @@ class MainWindow(Gtk.ApplicationWindow):
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         outer.set_border_width(24)
 
+        title = Gtk.Label(xalign=0)
+        title.set_markup(
+            "<span size='large' weight='bold'>Créer l'image ISO</span>\n"
+            "Vérifiez le résumé, puis lancez la création."
+        )
+        title.set_line_wrap(True)
+        outer.pack_start(title, False, False, 0)
+
         self.summary_label = Gtk.Label(xalign=0)
         self.summary_label.set_line_wrap(True)
         outer.pack_start(self.summary_label, False, False, 0)
@@ -361,10 +373,16 @@ class MainWindow(Gtk.ApplicationWindow):
             f"<b>Contenu :</b> {mode}"
         )
 
-    def start_build(self):
+    def _save_and_build(self):
+        if not self.save_config(False):
+            return
+        self.notebook.set_current_page(1)
+        self.start_build(skip_save=True)
+
+    def start_build(self, skip_save: bool = False):
         if self.build_running:
             return
-        if not self.save_config(False):
+        if not skip_save and not self.save_config(False):
             return
         if not common.elevated_available():
             common.show_error(self, "Build", "sudo ou pkexec est indisponible.")
